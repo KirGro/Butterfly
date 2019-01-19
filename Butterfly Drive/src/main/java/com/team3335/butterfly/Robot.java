@@ -23,7 +23,7 @@ public class Robot extends IterativeRobot {
     private ButterflyDriveHelper mButterflyDriveHelper = new ButterflyDriveHelper();
     private IControlBoard mControlBoard = ControlBoard.getInstance();
  
-    private Limelight mLimelight = new Limelight();
+    private Limelight mLimelight = Limelight.getInstance();
     
     private final SubsystemManager mSubsystemManager = new SubsystemManager(
             Arrays.asList(
@@ -142,7 +142,7 @@ public class Robot extends IterativeRobot {
     			double horizontalScalar = Math.abs(x)>7 ? x * .05: x * .1;
     			//mDrivetrain.setOpenLoop(mButterflyDriveHelper.butterflyDrive(forward, sideway, rotation+horizontalScalar, 0, DriveModeState.MECANUM_ROBOT_RELATIVE, DrivetrainWheelState.MECANUM, true));
     		//} else {
-    			double distance = mLimelight.getTargetDistance();
+    			double distance = mLimelight.getDistance();
     			double angle = lastGoodS<-50 ? 90-lastGoodS : -lastGoodS;
     			double sidewaysComp = distance * Math.tan(angle) * (lastGoodS<-50 ? 1 : -1);
     			double distanceComp =distance/12 - 1;

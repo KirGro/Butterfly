@@ -21,19 +21,7 @@ public class ButterflyDriveHelper {
 	 * @return
 	 */
 	public DriveIntent butterflyDrive(double f, double s, double r, double h, DriveModeState driveMode, DrivetrainWheelState driveWheelState, boolean brake) {
-		switch(driveMode) {
-			case MECANUM_FIELD_RELATIVE:
-				return fieldRelative(f, s, r, h, driveMode, driveWheelState, brake);
-			case MECANUM_ROBOT_RELATIVE: 
-				return robotRelative(f, s, r, driveMode, driveWheelState, brake);
-			case TANK:
-				return tank(f, s, driveMode, driveWheelState, brake);
-			case ARCADE:
-				return arcade(f, r, driveMode, driveWheelState, brake);
-			default:
-				DriverStation.reportError("Drive helper recieved unknown drive mode: "+driveMode+". Stopping all drivetrain movement.", false);
-				return DriveIntent.MECANUM_BRAKE;
-		}
+		return butterflyDrive(f, s, r, h, driveMode, driveWheelState, brake, false);
 	}
 	
 	public DriveIntent butterflyDrive(double f, double s, double r, double h, DriveModeState driveMode, DrivetrainWheelState driveWheelState, boolean brake, boolean visionDriving) {
@@ -61,8 +49,7 @@ public class ButterflyDriveHelper {
 	}
 	
 	private DriveIntent fieldRelative(double f, double s, double r, double h, DriveModeState driveMode, DrivetrainWheelState driveWheelState, boolean brake) {
-		//TODO MAKE FEILD RELATIVE
-		return robotRelative(f, s, r, driveMode, driveWheelState, brake);
+		return fieldRelative(f, s, r, h, driveMode, driveWheelState, brake, false);
 	}
 	
 	private DriveIntent fieldRelative(double f, double s, double r, double h, DriveModeState driveMode, DrivetrainWheelState driveWheelState, boolean brake, boolean visionDriving) {
@@ -71,37 +58,7 @@ public class ButterflyDriveHelper {
 	}
 	
 	private DriveIntent robotRelative(double f, double s, double r, DriveModeState driveMode, DrivetrainWheelState driveWheelState, boolean brake) {
-		double mFR, mFL, mBR, mBL;
-		
-		//Calculate scalar, and smoothing
-		double forward = map(f), sideway = map(s), rotation = map(r);
-		
-		//Calculate all wheel speeds
-		mFR = (forward + sideway + rotation);
-		mFL = (forward - sideway - rotation);
-		mBR = (forward - sideway + rotation);
-		mBL = (forward + sideway - rotation);
-		
-		/* Old
-		mFR = (forward - sideway + rotation);
-		mFL = (forward + sideway + rotation);
-		mBR = (-forward - sideway + rotation);
-		mBL = (-forward + sideway + rotation);
-		*/
-		
-		//Fix overpowered wheels
-		double largest = Math.abs(mFR)>Math.abs(mFL) ? Math.abs(mFR) : Math.abs(mFL);
-		largest = largest>Math.abs(mBR) ? largest : Math.abs(mBR);
-		largest = largest>Math.abs(mBL) ? largest : Math.abs(mBL);
-		SmartDashboard.putString("Drive Intent Calculating: ", "Robot Relative, largest - "+largest);
-		if(largest>1) {
-			mFR/=largest;
-			mFL/=largest;
-			mBR/=largest;
-			mBL/=largest;
-		}
-		oldDriveIntent = new DriveIntent(mFR, mFL, mBR, mBL, driveMode, true);
-		return oldDriveIntent;
+		return robotRelative(f, s, r, driveMode, driveWheelState, brake, false);
 	}
 	
 	private DriveIntent robotRelative(double f, double s, double r, DriveModeState driveMode, DrivetrainWheelState driveWheelState, boolean brake, boolean visionDriving) {
@@ -134,58 +91,40 @@ public class ButterflyDriveHelper {
 			mBR/=largest;
 			mBL/=largest;
 		}
-		oldDriveIntent = new DriveIntent(mFR*.5, mFL*.5, mBR*.5, mBL*.5, driveMode, true);
+		if(visionDriving) {
+			mFR*=.5;
+			mFL*=.5;
+			mBR*=.5;
+			mBL*=.5;
+		}
+		oldDriveIntent = new DriveIntent(mFR, mFL, mBR, mBL, driveMode, true);
 		return oldDriveIntent;
 	}
 
 	private DriveIntent tank(double f, double s, DriveModeState driveMode, DrivetrainWheelState driveWheelState, boolean brake) {
-		double forwardRight = map(f), forwardLeft = map(s);
-		if(driveWheelState == DrivetrainWheelState.MECANUM) {
-			//TODO Test
-			oldDriveIntent = new DriveIntent(forwardRight, forwardLeft, forwardRight, forwardLeft, driveMode, brake);
-		} else {
-			oldDriveIntent = new DriveIntent(forwardRight, forwardLeft, forwardRight, forwardLeft, driveMode, brake);
-		}
-		SmartDashboard.putString("Drive Intent Calculating: ", "Tank Drive");
-		return oldDriveIntent;
+		return tank(f, s, driveMode, driveWheelState, brake, false);
 	}
 	
 	private DriveIntent tank(double f, double s, DriveModeState driveMode, DrivetrainWheelState driveWheelState, boolean brake, boolean visionDriving) {
 		double forwardRight = map(f), forwardLeft = map(s);
+
+		if(visionDriving) {
+			forwardLeft*=.5;
+			forwardLeft*=.5;
+		}
+		
 		if(driveWheelState == DrivetrainWheelState.MECANUM) {
 			//TODO Test
-			oldDriveIntent = new DriveIntent(forwardRight*.5, forwardLeft*.5, forwardRight*.5, forwardLeft*.5, driveMode, brake);
+			oldDriveIntent = new DriveIntent(forwardRight, forwardLeft, forwardRight, forwardLeft, driveMode, brake);
 		} else {
-			oldDriveIntent = new DriveIntent(forwardRight*.5, forwardLeft*.5, forwardRight*.5, forwardLeft*.5, driveMode, brake);
+			oldDriveIntent = new DriveIntent(forwardRight, forwardLeft, forwardRight, forwardLeft, driveMode, brake);
 		}
 		SmartDashboard.putString("Drive Intent Calculating: ", "Tank Drive");
 		return oldDriveIntent;
 	}
 	
 	private DriveIntent arcade(double f, double r, DriveModeState driveMode, DrivetrainWheelState driveWheelState, boolean brake) {
-		double forward = map(f), turn = map(r);
-		if(driveWheelState == DrivetrainWheelState.MECANUM) {
-			//TODO Test
-			double fr = forward+turn;
-			double fl = forward-turn;
-			double largest = Math.abs(fl)>Math.abs(fr) ? Math.abs(fl): Math.abs(fr);
-			SmartDashboard.putString("Drive Intent Calculating: ", "Arcade Drive, largest - "+largest);
-			if(largest>1) {
-				fr/=largest;
-				fl/=largest;
-			}
-			oldDriveIntent = new DriveIntent(fr, fl, fr, fl, driveMode, brake);
-		} else {
-			double fr = forward+turn;
-			double fl = forward-turn;
-			double largest = Math.abs(fl)>Math.abs(fr) ? Math.abs(fl): Math.abs(fr);
-			if(largest>1) {
-				fr/=largest;
-				fl/=largest;
-			}
-			oldDriveIntent = new DriveIntent(fr, fl, fr, fl, driveMode, brake);
-		}
-		return oldDriveIntent;
+		return arcade(f, r, driveMode, driveWheelState, brake, false);
 	}
 
 	private DriveIntent arcade(double f, double r, DriveModeState driveMode, DrivetrainWheelState driveWheelState, boolean brake, boolean visionDriving) {
@@ -200,7 +139,11 @@ public class ButterflyDriveHelper {
 				fr/=largest;
 				fl/=largest;
 			}
-			oldDriveIntent = new DriveIntent(fr*.5, fl*.5, fr*.5, fl*.5, driveMode, brake);
+			if(visionDriving) {
+				fr*=.5;
+				fl*=.5;
+			}
+			oldDriveIntent = new DriveIntent(fr, fl, fr, fl, driveMode, brake);
 		} else {
 			double fr = forward+turn;
 			double fl = forward-turn;
@@ -209,7 +152,11 @@ public class ButterflyDriveHelper {
 				fr/=largest;
 				fl/=largest;
 			}
-			oldDriveIntent = new DriveIntent(fr*.5, fl*.5, fr*.5, fl*.5, driveMode, brake);
+			if(visionDriving) {
+				fr*=.5;
+				fl*=.5;
+			}
+			oldDriveIntent = new DriveIntent(fr, fl, fr, fl, driveMode, brake);
 		}
 		return oldDriveIntent;
 	}
