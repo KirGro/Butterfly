@@ -95,7 +95,7 @@ public class Drivetrain extends Subsystem{
 		mBackLeft.setEncoderToOutputRatio(Constants.kGearRatio2);
 		
 		//Create shifters
-		if(Constants.kUsingSpringSolenoids) {
+		if(Constants.kDrivetrainUsingSpringSolenoids) {
 			mShifterRight = new ChoosableSolenoid(Constants.kShifterModule, Constants.kShifterRightSkidId);
 			mShifterLeft = new ChoosableSolenoid(Constants.kShifterModule, Constants.kShifterLeftSkidId);
 		} else {
@@ -137,7 +137,7 @@ public class Drivetrain extends Subsystem{
 		//Drive motors
 		setBrakeMode(driveIntent.getBrakeMode());
 		
-		
+
 		mPeriodicIO.front_right_intent = driveIntent.getFrontRight();
 		mPeriodicIO.front_left_intent = driveIntent.getFrontLeft();
 		mPeriodicIO.back_right_intent = driveIntent.getBackRight();
@@ -321,28 +321,3 @@ public class Drivetrain extends Subsystem{
         */
     }
 }
-
-
-/*
-	private void calculateWheels() {
-		if( (DrivetrainState.driveModeState == DrivetrainState.DriveModeState.MECANUM_FIELD_RELATIVE ||
-			 DrivetrainState.driveModeState == DrivetrainState.DriveModeState.MECANUM_ROBOT_RELATIVE) &&
-			DrivetrainState.drivetrainWheelState == DrivetrainState.DrivetrainWheelState.SKID_STEER 		) {
-			
-		}
-		switch(mDS) {
-			case MECANUM_ROBOT_RELATIVE: 
-				calculateRobotRelative();
-				break;
-			case MECANUM_FIELD_RELATIVE:
-				calculateFieldRelative();
-				break;
-			case TANK:
-				calculateTank();
-				break;
-			case ARCADE:
-				calculateArcade();
-				break;
-		}
-	}
-*/

@@ -4,6 +4,7 @@ import edu.wpi.first.networktables.NetworkTableEntry;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
+import com.team3335.butterfly.loops.Loop;
 import com.team3335.butterfly.vision.*;
 
 /**
@@ -14,8 +15,36 @@ import com.team3335.butterfly.vision.*;
 public class Limelight extends Subsystem implements IVisionTarget{
 	private NetworkTableInstance table = null;
 	private static Limelight mInstance;
+
 	private IVisionTarget[] mTargets = new IVisionTarget[10];
-	private int mTargetSelected;
+
+	private PeriodicIO mPeriodicIO = new PeriodicIO();
+
+	private LightMode mLightMode;
+	private CameraMode mCameraMode;
+	private StreamMode mStreamMode;
+	private Target mTargetSelected;
+	
+	private final Loop mLoop = new Loop() {
+        @Override
+        public void onStart(double timestamp) {
+            synchronized (Limelight.this) {
+				//startLogging();
+            }
+        }
+
+        @Override
+        public void onLoop(double timestamp) {
+            synchronized (Limelight.this) {
+            }
+        }
+
+        @Override
+        public void onStop(double timestamp) {
+            stop();
+            //stopLogging();
+        }
+    };
 	
 	public static Limelight getInstance() {
 		if (mInstance == null) {
@@ -25,102 +54,80 @@ public class Limelight extends Subsystem implements IVisionTarget{
     }
 	
 	private Limelight() {
+		//Set up table and game targets
 		table = NetworkTableInstance.getDefault();
-		mTargets[0] = new HatchTarget();
-		mTargetSelected = 0;
+		mTargets[Target.HATCH.ordinal()] = new HatchTarget();
+
+		//Set default values
+		mTargetSelected = Target.HATCH;
+		mLightMode = LightMode.DEFAULT;
+		mCameraMode = CameraMode.VISION;
+		mStreamMode = StreamMode.SECONDARY;
+	}
+
+	public enum Target {
+		HATCH,
+		BALL;
+		
+		protected static Target[] targets = Target.values();
 	}
 
 	public enum LightMode {
 		DEFAULT,
 		ON,
 		BLINK,
-		OFF
+		OFF;
+
+		protected static LightMode[] lightModes = LightMode.values();
 	}
 
 	public enum CameraMode {
 		VISION, 
-		DRIVER
+		DRIVER;
+
+		protected static CameraMode[] cameraModes = CameraMode.values();
 	}
 	
 	public enum StreamMode {
 		SIDE_BY_SIDE,
 		MAIN,
-		SECONDARY
+		SECONDARY;
+
+		protected static StreamMode[] streamModes = StreamMode.values();
 	}
 
-	public boolean isTarget() {
-		return getValue("tv").getDouble(0) == 1;
-	}
+	public boolean hasTarget() {return mPeriodicIO.hasTarget;}
 
-	public double getTx() {
-		return getValue("tx").getDouble(0.00);
-	}
+	public double getTx() {return mPeriodicIO.tx;}
 
-	public double getTy() {
-		return getValue("ty").getDouble(0.00);
-	}
+	public double getTy() {return mPeriodicIO.ty;}
 
-	public double getTa() {
-		return getValue("ta").getDouble(0.00);
-	}
+	public double getTa() {return mPeriodicIO.ta;}
 
-	public double getTs() {
-		return getValue("ts").getDouble(0.00);
-	}
+	public double getTs() {return mPeriodicIO.ts;}
 
-	public double getTl() {
-		return getValue("tl").getDouble(0.00);
-	}
+	public void setLedMode(LightMode mode) {mLightMode = mode;}
 
-	public void setLedMode(LightMode mode) {
-		getValue("ledMode").setNumber(mode.ordinal());
-	}
+	public void setCameraMode(CameraMode mode) {mCameraMode = mode;}
 
-	public void setCameraMode(CameraMode mode) {
-		getValue("camMode").setNumber(mode.ordinal());
-	}
+	public void setPipeline(Target target) {mTargetSelected = target;}
 
-	public void setPipeline(int number) {
-		getValue("pipeline").setNumber(number);
-		mTargetSelected = number;
-	}
-
-	public int getTargetSelected() {
-		return mTargetSelected;
-	}
+	public Target getTargetSelected() {return mTargetSelected;}
 	
-	public void setSteam(StreamMode mode) {
-		getValue("stream").setNumber(mode.ordinal());
-	}
+	public void setSteam(StreamMode mode) {mStreamMode = mode;}
 
-	private NetworkTableEntry getValue(String key) {
-		return table.getTable("limelight").getEntry(key);
-	}
+	private NetworkTableEntry getValue(String key) {return table.getTable("limelight").getEntry(key);}
 
 	@Override
-	public IVisionTarget getTargetType() {
-		return mTargets[mTargetSelected];
-	}
-
+	public IVisionTarget getTargetType() {return mTargets[mTargetSelected.ordinal()];}
 	@Override
-	public double getDistance() {
-		return mTargets[mTargetSelected].getDistance();
-	}
-
+	public double getDistance() {return mTargets[mTargetSelected.ordinal()].getDistance();}
 	@Override
-	public double getHeightAngle() {
-		return mTargets[mTargetSelected].getHeightAngle();
-	}
-
+	public double getHeightAngle() {return mTargets[mTargetSelected.ordinal()].getHeightAngle();}
 	@Override
-	public double getOffsetAngle() {
-		return mTargets[mTargetSelected].getOffsetAngle();
-	}
-
+	public double getOffsetAngle() {return mTargets[mTargetSelected.ordinal()].getOffsetAngle();}
 	@Override
-	public double getSidewaysAngle() {
-		return mTargets[mTargetSelected].getSidewaysAngle();
-	}
+	public double getSidewaysAngle() {return mTargets[mTargetSelected.ordinal()].getSidewaysAngle();}
 
 	@Override
 	public boolean checkSystem() {
@@ -130,7 +137,7 @@ public class Limelight extends Subsystem implements IVisionTarget{
 	@Override
 	public void outputTelemetry() {
 		//post to smart dashboard periodically
-        SmartDashboard.putBoolean("Limeligh Target Aquired", isTarget());
+        SmartDashboard.putBoolean("Limeligh Target Aquired", hasTarget());
         SmartDashboard.putNumber("Limelight X", getTx());
         SmartDashboard.putNumber("Limelight Y", getTy());
         SmartDashboard.putNumber("Limelight S", getTs());
@@ -140,6 +147,41 @@ public class Limelight extends Subsystem implements IVisionTarget{
 	@Override
 	public void stop() {
 
+	}
+	
+	@Override
+    public synchronized void readPeriodicInputs() {
+		mPeriodicIO.hasTarget = getValue("tv").getDouble(0) == 1;
+		mPeriodicIO.tx = getValue("tx").getDouble(0.00);
+		mPeriodicIO.ty = getValue("ty").getDouble(0.00);
+		mPeriodicIO.ta = getValue("ta").getDouble(0.00);
+		mPeriodicIO.ts = getValue("ts").getDouble(0.00);
+		mPeriodicIO.targetSelected = Target.targets[(int) getValue("pipeline").getDouble(0)];
+		mPeriodicIO.cameraMode = CameraMode.cameraModes[(int) getValue("camMode").getDouble(0)];
+		mPeriodicIO.streamMode = StreamMode.streamModes[(int) getValue("stream").getDouble(0)];
+		mPeriodicIO.lightMode = LightMode.lightModes[(int) getValue("ledMode").getDouble(0)];
+	}
+
+	@Override
+	public synchronized void writePeriodicOutputs() {
+		if(mPeriodicIO.targetSelected != mTargetSelected) getValue("pipeline").setNumber(mTargetSelected.ordinal());
+		if(mPeriodicIO.lightMode != mLightMode) getValue("ledMode").setNumber(mLightMode.ordinal());
+		if(mPeriodicIO.streamMode != mStreamMode) getValue("stream").setNumber(mStreamMode.ordinal());
+		if(mPeriodicIO.cameraMode!= mCameraMode) getValue("camMode").setNumber(mCameraMode.ordinal());
+		
+	}
+
+	public static class PeriodicIO {
+		//Inputs
+		public boolean hasTarget;
+		public double tx;
+		public double ty;
+		public double ta;
+		public double ts;
+		public Target targetSelected;
+		public StreamMode streamMode;
+		public LightMode lightMode;
+		public CameraMode cameraMode;
 	}
 
 	

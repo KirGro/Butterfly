@@ -9,6 +9,7 @@ import com.team3335.butterfly.loops.Looper;
 import com.team3335.butterfly.states.DrivetrainState.DriveModeState;
 import com.team3335.butterfly.states.DrivetrainState.DrivetrainWheelState;
 import com.team3335.butterfly.subsystems.*;
+import com.team3335.butterfly.subsystems.Limelight.Target;
 import com.team3335.butterfly.vision.VisionTargetDriver;
 import com.team3335.lib.util.ButterflyDriveHelper;
 import com.team3335.lib.util.LatchedBoolean;
@@ -19,17 +20,18 @@ public class Robot extends TimedRobot {
     private ButterflyDriveHelper mButterflyDriveHelper = new ButterflyDriveHelper();
     private VisionTargetDriver mVisionTargetDriver = new VisionTargetDriver();
     private IControlBoard mControlBoard = ControlBoard.getInstance();
- 
-    private Limelight mLimelight = Limelight.getInstance();
     
     private final SubsystemManager mSubsystemManager = new SubsystemManager(
             Arrays.asList(
                     Drivetrain.getInstance(),
                     NavX.getInstance(),
-                    Carriage.getInstance()
+                    Carriage.getInstance(),
+                    Limelight.getInstance()
+
             )
     );
-
+ 
+    private Limelight mLimelight = Limelight.getInstance();
     private Drivetrain mDrivetrain = Drivetrain.getInstance();
     private NavX mNavX = NavX.getInstance();
     private Carriage mCarriage = Carriage.getInstance();
@@ -67,6 +69,7 @@ public class Robot extends TimedRobot {
     public void teleopInit() {
         SmartDashboard.putString("Match Cycle", "TELEOP");
         mDrivetrain.zeroSensors();
+        mNavX.zeroYaw();
         mDisabledLooper.stop();
         mEnabledLooper.start();
     }
@@ -91,7 +94,6 @@ public class Robot extends TimedRobot {
     
     @Override
     public void teleopPeriodic() {
-        outputToSmartDashboard();
         SmartDashboard.putString("Match Cycle", "TELEOP");
         double timestamp = Timer.getFPGATimestamp();        
 
@@ -114,13 +116,8 @@ public class Robot extends TimedRobot {
         DriveModeState mode = mDrivetrain.getDriveModeState();
         DrivetrainWheelState wheel = mDrivetrain.getDrivetrainWheelState();
         if(tempHatch) {
-            Thread thread1 = new Thread() {
-                public void run() {
-                    mCarriage.launchHatch();
-                }
-            };
-            thread1.start();
-            SmartDashboard.putNumber("Last Launch Time", Timer.getFPGATimestamp());
+            mCarriage.launchHatch();
+            SmartDashboard.putNumber("Last Launch Time", timestamp);
         }
         
         if(tempMode) {
@@ -130,9 +127,9 @@ public class Robot extends TimedRobot {
         	wheel = wheel.next();
         	mDrivetrain.setWheelState(wheel);
         }
-    	if(mLimelight.isTarget() && mControlBoard.getUseAssist()) {
+    	if(mLimelight.hasTarget() && mControlBoard.getUseAssist()) {
             //mDrivetrain.setOpenLoop(mVisionTargetDriver.pureVisionDriveRaw(0)); //Old way using raw velocities
-            mDrivetrain.setPositionFollowing(mVisionTargetDriver.pureVisionDriveControl(0)); //New way using actual distances and encoders
+            mDrivetrain.setPositionFollowing(mVisionTargetDriver.pureVisionDriveControl(Target.HATCH)); //New way using actual distances and encoders
     		
     	}else {
     		switch(mode) {
@@ -152,14 +149,6 @@ public class Robot extends TimedRobot {
     	}
         
         
-    }
-    
-    
-
-    public void outputToSmartDashboard() {
-        mDrivetrain.outputTelemetry();
-        mNavX.outputTelemetry();
-        mLimelight.outputTelemetry();
     }
     
 }

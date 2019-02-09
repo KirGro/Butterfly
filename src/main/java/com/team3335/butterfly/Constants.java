@@ -7,6 +7,13 @@ public class Constants {
 
     public static final double kLooperDt = 0.01;	//Honestly no clue what this is, used by team3335.butterfly.loops.Looper, I just copied from Cheesy Poofs. Potentially deals with loop timing?
 	public static final int kLongCANTimeoutMs = 100;
+
+	public static final int kRobot = 2;
+
+
+
+
+
 	
 	/* FIELD CONSTATNS */
 
@@ -35,8 +42,7 @@ public class Constants {
 	public static final double kSkidSteerWheelbaseDiameter = Math.sqrt(Math.pow(kSkidSteerWheelbaseWidthInches, 2) + Math.pow(kSkidSteerWheelbaseLengthInches, 2));
 	public static final boolean kUsingTalonSRXs = true;
 	public static final int kSRXEncoderCPR = 4096;
-	
-	//Wheel power ratios
+
 	public static final double kGearRatio1 = -(14/56);	//From motor output to encoder shaft
 	public static final double kGearRatio2 = -(40/50);	//From encoder shaft to mecanum
 	public static final double kChainRatio1 = (12/24);	//From mecanum to high track
@@ -44,13 +50,20 @@ public class Constants {
 	public static final double kMotorToMecanumRatio = kGearRatio1*kGearRatio2;
 	public static final double kMecanumToSkidSteerRatio = kChainRatio1;
 	public static final double kMotorToSkidSteerRatio = kMotorToMecanumRatio*kMecanumToSkidSteerRatio;
+
+	//Carriage
+	
 	
 	//Vision
 	public static final double kCameraHeight = 36; //TODO Correct
-	public static final double kCameraAngle = -18; //TODO Correct
+	public static final double kCameraAngle = -18; 
 	public static final double kCameraDistanceFromFront = 6; 
+
+
+
+
 	
-	/* SOFTWARE CONSTANTS */
+	/* SOFTWARE CONSTANTS / PREFERENCES */
 	
 	//Drive Controls
 	public static final double kJoystickDeadband = .05;
@@ -58,12 +71,16 @@ public class Constants {
 	public static final double kSkidSteerMaxPower = 1; 
 	public static final double kMecanumMaxPower = .5; 
 	public static final boolean kUseSinMapping = false; //TODO Maybe add this later...
-	
-	//Preferences
-	//public static final boolean kUseDriveModeCorrection = false; //TODO Maybe add this later... 
+
+		//public static final boolean kUseDriveModeCorrection = false; //TODO Maybe add this later... 
 	public static final boolean kFixIncompatableDriveMode = true;
 	public static final DriveModeState kDefaultMecanumDriveState = DriveModeState.MECANUM_ROBOT_RELATIVE;
 	public static final DriveModeState kDefaultSkidSteerDriveState = DriveModeState.TANK;
+
+	//Carriage
+	public static final double kPusherTime = 1.5;
+	public static final boolean kUsePusherCooldown = true;
+	public static final double kCooldownTime = 1.;
 	
 	//Vision
 	public static final int kPixelHeight = 240;
@@ -71,6 +88,10 @@ public class Constants {
 	public static final double kVerticalFOV = 41;
 	public static final double kHorizontalFOV = 54;
 	
+
+
+
+
 	
 	/* I/O */
 	
@@ -85,7 +106,7 @@ public class Constants {
 	public static final int kBackRightPDPId = 2;
 	public static final int kBackLeftPDPId = 3;
 	
-	public static final boolean kUsingSpringSolenoids = true;
+	public static final boolean kDrivetrainUsingSpringSolenoids = true;
 	public static final int kShifterModule = 1;
 	public static final int kShifterRightMecId = 2;
 	public static final int kShifterRightSkidId = 0;
@@ -93,8 +114,28 @@ public class Constants {
 	public static final int kShifterLeftSkidId = 1;
 	public static final int kCoolantId = 7;
 
+	//Elevator
+	public static final int kMasterWinchCANId = -1; //TODO
+	public static final int kSlave1WinchCANId = -1; //TODO
+
+	
+
+
+	//Carriage
+	public static final int kCarriageRollerWheelCANId = -1;	//TODO
+
 	public static final int kCarriageModule = 1;
 	public static final int kHatchPusher = 5;
+	public static final int kHatchPickup = 6;
+	
+		//Add dio for laser distance sensor from REV here
+
+	//Rear Pickup 
+	public static final int kMasterArmCANId = -1; //TODO
+	public static final int kSlave1ArmCANd = -1; //TODO
+	public static final int kRearRollerWheelCANId = -1; //TODO
+
+		//Add dio for laser distance sensor from REV here
 	
 	//Controllers - Use -1 for unused controllers
 	public static final GamepadControlBoardType kGamepadType = GamepadControlBoardType.XBOX;

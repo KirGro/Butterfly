@@ -1,6 +1,7 @@
 package com.team3335.butterfly.loops;
 
-//import com.team254.lib.util.CrashTrackingRunnable;
+import edu.wpi.first.wpilibj.Notifier;
+import com.team3335.lib.util.CrashTrackingRunnable;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import com.team3335.butterfly.Constants;
@@ -17,13 +18,12 @@ public class Looper implements ILooper {
 
     private boolean running_;
 
-    //private final Notifier notifier_;
+    private final Notifier notifier_;
     private final List<Loop> loops_;
     private final Object taskRunningLock_ = new Object();
     private double timestamp_ = 0;
     private double dt_ = 0;
-
-    /*
+    
     private final CrashTrackingRunnable runnable_ = new CrashTrackingRunnable() {
         @Override
         public void runCrashTracked() {
@@ -41,10 +41,9 @@ public class Looper implements ILooper {
             }
         }
     };
-    */
 
     public Looper() {
-        //notifier_ = new Notifier(runnable_);
+        notifier_ = new Notifier(runnable_);
         running_ = false;
         loops_ = new ArrayList<>();
     }
@@ -66,14 +65,14 @@ public class Looper implements ILooper {
                 }
                 running_ = true;
             }
-            //notifier_.startPeriodic(kPeriod);
+            notifier_.startPeriodic(kPeriod);
         }
     }
 
     public synchronized void stop() {
         if (running_) {
             System.out.println("Stopping loops");
-            //notifier_.stop();
+            notifier_.stop();
             synchronized (taskRunningLock_) {
                 running_ = false;
                 timestamp_ = Timer.getFPGATimestamp();

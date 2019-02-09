@@ -10,6 +10,7 @@ package com.team3335.butterfly.vision;
 import com.team3335.butterfly.Constants;
 import com.team3335.butterfly.states.DrivetrainState.*;
 import com.team3335.butterfly.subsystems.Limelight;
+import com.team3335.butterfly.subsystems.Limelight.Target;
 import com.team3335.lib.util.ButterflyDriveHelper;
 import com.team3335.lib.util.DriveIntent;
 import com.team3335.lib.util.PathIntent;
@@ -31,7 +32,7 @@ public class VisionTargetDriver {
 
     }
 
-    public DriveIntent pureVisionDriveRaw(int target){
+    public DriveIntent pureVisionDriveRaw(Target target){
         if(mLimelight.getTargetSelected()!=target) {
             mLimelight.setPipeline(target);
         }/*
@@ -85,7 +86,7 @@ public class VisionTargetDriver {
         }
     }
 
-    public PathIntent pureVisionDriveControl(int target) {
+    public PathIntent pureVisionDriveControl(Target target) {
         if(mLimelight.getTargetSelected()!=target) {
             mLimelight.setPipeline(target);
         }
@@ -112,15 +113,15 @@ public class VisionTargetDriver {
 
         //rot = angle/360   x   wheelWidth x pi / circumference
         //Calculate wheel rotations
-        double turningRoations = (angle * Constants.kMecanumWheelWidth) / (360 * Constants.kDrivetrainWheelDiameterInches);
+        double turningRotations = (angle * Constants.kMecanumWheelWidth) / (360 * Constants.kDrivetrainWheelDiameterInches);
         double sideRotations = sidewaysInches / (Constants.kDrivetrainWheelDiameterInches * Math.PI);
         double forwardRotations = distanceInches / (Constants.kDrivetrainWheelDiameterInches * Math.PI);
 
         
-		double mFR = (forwardRotations + sideRotations + turningRoations);
-		double mFL = (forwardRotations - sideRotations - turningRoations);
-		double mBR = (forwardRotations - sideRotations + turningRoations);
-		double mBL = (forwardRotations + sideRotations - turningRoations);
+		double mFR = (forwardRotations + sideRotations + turningRotations);
+		double mFL = (forwardRotations - sideRotations - turningRotations);
+		double mBR = (forwardRotations - sideRotations + turningRotations);
+		double mBL = (forwardRotations + sideRotations - turningRotations);
 
         
 

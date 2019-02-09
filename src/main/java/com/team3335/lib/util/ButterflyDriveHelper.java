@@ -55,11 +55,37 @@ public class ButterflyDriveHelper {
 	private DriveIntent fieldRelative(double f, double s, double r, double h, DriveModeState driveMode, DrivetrainWheelState driveWheelState, boolean brake, boolean visionDriving) {
 		//TODO MAKE FEILD RELATIVE
 		double mFR, mFL, mBR, mBL;
+		//SmartDashboard.putNumber("Recieved Heading", h);
 
-		mFR = f*Math.cos(h) + s*Math.sin(h) + r;
-		mFL = f*Math.cos(h) - s*Math.sin(h) - r;
-		mBR = f*Math.cos(h) - s*Math.sin(h) + r;
-		mBL = f*Math.cos(h) + s*Math.sin(h) - r;
+		//double costheta = Math.abs(h);
+		//double sintheta = (Math.abs(h)>90);
+		double h1 = Math.abs(h);//= h>=0?h:180-h;
+		double h2 = (180-h)*Math.abs(h)/h;
+
+		double hcorrect = h<0?360+h:h;
+		h1=hcorrect;
+		h2=hcorrect;
+		
+
+		double fo = Math.cos(Math.toRadians(h1));//*(Math.abs(h)>90?-1:1);
+		double si = -Math.sin(Math.toRadians(h2));//*(h>0?-1:1);
+		SmartDashboard.putNumber("\"Cos\"", fo);
+		SmartDashboard.putNumber("\"Sin\"", si);
+
+		double forward = fo*f+si*s;
+		double sideway = fo*s+si*f;
+		SmartDashboard.putNumber("\"Forward\"", forward);
+		SmartDashboard.putNumber("\"Sideway\"", sideway);
+
+		//if(h<0)forward*=-1;
+		if(Math.abs(h)>=45&&Math.abs(h)<=135) sideway*=-1;
+		//sideway*=-1;
+		sideway*=1.5;
+
+		mFR = forward + sideway + r;
+		mFL = forward - sideway - r;
+		mBR = forward- sideway + r;
+		mBL = forward + sideway - r;
 
 		double largest = Math.abs(mFR)>Math.abs(mFL) ? Math.abs(mFR) : Math.abs(mFL);
 		largest = largest>Math.abs(mBR) ? largest : Math.abs(mBR);
@@ -79,6 +105,11 @@ public class ButterflyDriveHelper {
 			mBL*=.5;
 		}
 		oldDriveIntent = new DriveIntent(mFR, mFL, mBR, mBL, driveMode, true);
+		//SmartDashboard.putNumber("FR Field", mFR);
+		//SmartDashboard.putNumber("FL Field", mFL);
+		//SmartDashboard.putNumber("BR Field", mBR);
+		//SmartDashboard.putNumber("BL Field", mBL);
+
 		return oldDriveIntent;
 	}
 	

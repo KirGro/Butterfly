@@ -1,6 +1,7 @@
 package com.team3335.butterfly.subsystems;
 
 import com.kauailabs.navx.frc.AHRS;
+import com.team3335.butterfly.loops.Loop;
 import com.team3335.butterfly.subsystems.Subsystem;
 
 import edu.wpi.first.wpilibj.SPI;
@@ -9,6 +10,30 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 public class NavX extends Subsystem {
 	private static NavX mInstance = new NavX();
 	private AHRS ahrs = null;
+
+	private PeriodicIO mPeriodicIO = new PeriodicIO();
+
+	private final Loop mLoop = new Loop() {
+        @Override
+        public void onStart(double timestamp) {
+            synchronized (NavX.this) {
+				//startLogging();
+				zeroYaw();
+            }
+        }
+
+        @Override
+        public void onLoop(double timestamp) {
+            synchronized (NavX.this) {
+            }
+        }
+
+        @Override
+        public void onStop(double timestamp) {
+            stop();
+            //stopLogging();
+        }
+    };
 
 	private NavX() {
 		ahrs = new AHRS(SPI.Port.kMXP);
@@ -37,34 +62,67 @@ public class NavX extends Subsystem {
 
 	@Override
 	public void outputTelemetry() {
-		SmartDashboard.putNumber(   "NavX: IMU_Yaw",              ahrs.getYaw());
-		SmartDashboard.putNumber(   "NavX: IMU_Pitch",            ahrs.getPitch());
-		SmartDashboard.putNumber(   "NavX: IMU_Roll",             ahrs.getRoll());
+		SmartDashboard.putNumber(   "NavX: IMU_Yaw",              mPeriodicIO.yaw);
+		SmartDashboard.putNumber(   "NavX: IMU_Pitch",            mPeriodicIO.pitch);
+		SmartDashboard.putNumber(   "NavX: IMU_Roll",             mPeriodicIO.roll);
 		
-		SmartDashboard.putNumber(   "NavX: IMU_CompassHeading",   ahrs.getCompassHeading());
+		SmartDashboard.putNumber(   "NavX: IMU_CompassHeading",   mPeriodicIO.compassHeading);
 		
-		SmartDashboard.putNumber(   "NavX: IMU_TotalYaw",         ahrs.getAngle());
+		SmartDashboard.putNumber(   "NavX: IMU_TotalYaw",         mPeriodicIO.totalYaw);
 		
-		SmartDashboard.putNumber(   "NavX: Velocity_X",           ahrs.getVelocityX());
-		SmartDashboard.putNumber(   "NavX: Velocity_Y",           ahrs.getVelocityY());
-		SmartDashboard.putNumber(   "NavX: Displacement_X",       ahrs.getDisplacementX());
-		SmartDashboard.putNumber(   "NavX: Displacement_Y",       ahrs.getDisplacementY());
+		SmartDashboard.putNumber(   "NavX: Velocity_X",           mPeriodicIO.velocityX);
+		SmartDashboard.putNumber(   "NavX: Velocity_Y",           mPeriodicIO.velocityY);
+		SmartDashboard.putNumber(   "NavX: Displacement_X",       mPeriodicIO.displacementX);
+		SmartDashboard.putNumber(   "NavX: Displacement_Y",       mPeriodicIO.displacementY);
 		
-		AHRS.BoardYawAxis yaw_axis = ahrs.getBoardYawAxis();
-		SmartDashboard.putString(   "NavX: YawAxisDirection",     yaw_axis.up ? "Up" : "Down" );
-		SmartDashboard.putNumber(   "NavX: YawAxis",              yaw_axis.board_axis.getValue() );
+		//AHRS.BoardYawAxis yaw_axis = ahrs.getBoardYawAxis();
+		//SmartDashboard.putString(   "NavX: YawAxisDirection",     yaw_axis.up ? "Up" : "Down" );
+		//SmartDashboard.putNumber(   "NavX: YawAxis",              yaw_axis.board_axis.getValue() );
 		
-		SmartDashboard.putString(   "NavX: FirmwareVersion",      ahrs.getFirmwareVersion());
+		SmartDashboard.putString(   "NavX: FirmwareVersion",      mPeriodicIO.firmwareVersion);
 	}
 
 	@Override
 	public boolean checkSystem() {
+		zeroYaw();
 		return false;
 	}
 
 	@Override
 	public void stop() {
 
+	}
+	
+    @Override
+    public synchronized void readPeriodicInputs() {
+		mPeriodicIO.yaw = ahrs.getYaw();
+		mPeriodicIO.pitch = ahrs.getPitch();
+		mPeriodicIO.roll = ahrs.getRoll();
+		mPeriodicIO.compassHeading = ahrs.getCompassHeading();
+		mPeriodicIO.totalYaw = ahrs.getAngle();
+
+		mPeriodicIO.velocityX = ahrs.getVelocityX();
+		mPeriodicIO.velocityY = ahrs.getVelocityY();
+		mPeriodicIO.displacementX = ahrs.getDisplacementX();
+		mPeriodicIO.displacementY = ahrs.getDisplacementY();
+
+		mPeriodicIO.firmwareVersion = ahrs.getFirmwareVersion();
+
+	}
+
+	public static class PeriodicIO{
+		public double yaw;
+		public double pitch;
+		public double roll;
+		public double compassHeading;
+		public double totalYaw;
+
+		public double velocityX;
+		public double velocityY;
+		public double displacementX;
+		public double displacementY;
+
+		public String firmwareVersion;
 	}
 
 }
