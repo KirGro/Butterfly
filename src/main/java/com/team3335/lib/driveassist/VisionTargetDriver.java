@@ -1,17 +1,9 @@
-/*----------------------------------------------------------------------------*/
-/* Copyright (c) 2018 FIRST. All Rights Reserved.                             */
-/* Open Source Software - may be modified and shared by FRC teams. The code   */
-/* must be accompanied by the FIRST BSD license file in the root directory of */
-/* the project.                                                               */
-/*----------------------------------------------------------------------------*/
-
-package com.team3335.butterfly.vision;
+package com.team3335.lib.driveassist;
 
 import com.team3335.butterfly.Constants;
 import com.team3335.butterfly.states.DrivetrainState.*;
 import com.team3335.butterfly.subsystems.Limelight;
 import com.team3335.butterfly.subsystems.Limelight.Target;
-import com.team3335.lib.util.ButterflyDriveHelper;
 import com.team3335.lib.util.DriveIntent;
 import com.team3335.lib.util.PathIntent;
 

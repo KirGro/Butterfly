@@ -1,5 +1,7 @@
 package com.team3335.butterfly;
 
+import java.util.HashMap;
+
 import com.team3335.butterfly.ControlBoard.*;
 import com.team3335.butterfly.states.DrivetrainState.DriveModeState;
 
@@ -10,11 +12,6 @@ public class Constants {
 
 	public static final int kRobot = 2;
 
-
-
-
-
-	
 	/* FIELD CONSTATNS */
 
 	//Cargo
@@ -56,11 +53,8 @@ public class Constants {
 	
 	//Vision
 	public static final double kCameraHeight = 36; //TODO Correct
-	public static final double kCameraAngle = -18; 
-	public static final double kCameraDistanceFromFront = 6; 
-
-
-
+	public static final double kCameraAngle = -18; 	//TODO Correct
+	public static final double kCameraDistanceFromFront = 12; //TODO Correct
 
 	
 	/* SOFTWARE CONSTANTS / PREFERENCES */
@@ -68,10 +62,9 @@ public class Constants {
 	//Drive Controls
 	public static final double kJoystickDeadband = .05;
 	public static final double kGamepadDeadband = .1;
-	public static final double kSkidSteerMaxPower = 1; 
-	public static final double kMecanumMaxPower = .5; 
-	public static final boolean kUseSinMapping = false; //TODO Maybe add this later...
-
+	//public static final double kSkidSteerMaxPower = 1; 
+	//public static final double kMecanumMaxPower = .5;
+	
 		//public static final boolean kUseDriveModeCorrection = false; //TODO Maybe add this later... 
 	public static final boolean kFixIncompatableDriveMode = true;
 	public static final DriveModeState kDefaultMecanumDriveState = DriveModeState.MECANUM_ROBOT_RELATIVE;
@@ -112,14 +105,10 @@ public class Constants {
 	public static final int kShifterRightSkidId = 0;
 	public static final int kShifterLeftMecId = 3;
 	public static final int kShifterLeftSkidId = 1;
-	public static final int kCoolantId = 7;
 
 	//Elevator
 	public static final int kMasterWinchCANId = -1; //TODO
 	public static final int kSlave1WinchCANId = -1; //TODO
-
-	
-
 
 	//Carriage
 	public static final int kCarriageRollerWheelCANId = -1;	//TODO
@@ -128,26 +117,67 @@ public class Constants {
 	public static final int kHatchPusher = 5;
 	public static final int kHatchPickup = 6;
 	
-		//Add dio for laser distance sensor from REV here
+		//TODO Add dio for laser distance sensor from REV here
 
 	//Rear Pickup 
 	public static final int kMasterArmCANId = -1; //TODO
 	public static final int kSlave1ArmCANd = -1; //TODO
 	public static final int kRearRollerWheelCANId = -1; //TODO
 
-		//Add dio for laser distance sensor from REV here
+		//TODO Add dio for laser distance sensor from REV here
 	
 	//Controllers - Use -1 for unused controllers
 	public static final GamepadControlBoardType kGamepadType = GamepadControlBoardType.XBOX;
 	public static final JoystickControlBoardType kJoystickType = JoystickControlBoardType.PRO_3D;
 	public static final int kDriveGamepadPort = 0;
 	public static final int kDriveJoystickPort = -1;
-	public static final int kAssisstantGamepadPort = -1;
-	public static final int kAssisstantJoystickPort = -1;
+	public static final int kAssistantGamepadPort = 1;
+	public static final int kAssistantJoystickPort = -1;
 	
 	public static final boolean kUseGamepadForDriving = true;
 	public static final boolean kUseGamepadForButtons = true;
 	
+	public static final HashMap<String, Integer> buttonNameToId = new HashMap<String, Integer>() {
+		private static final long serialVersionUID = 1L;
+
+		{
+			//XBox
+			put("A", 1);
+			put("B", 2);
+			put("X", 3);
+			put("Y", 4);
+			put("Back", 7);
+			put("Start", 8);
+
+			//Playstation
+			put("Cross", 1);
+			put("Circle", 2);
+			put("Square", 3);
+			put("Triangle", 4);
+			put("Share", 7);
+			put("Options", 8);
+
+			//Both
+			put("Left Shoulder", 5);
+			put("Right Shoulder", 6);
+		}
+	};
+	
+	public static final HashMap<String, Integer> axisNameToId = new HashMap<String, Integer>() {
+		private static final long serialVersionUID = 1L;
+
+		{
+			//Both
+			put("Left X", 0);			//-1 to 1
+			put("Left Y", 1);			//-1 to 1
+			put("Left Trigger", 2);		//0 to 1
+			put("Right Trigger", 3);	//0 to 1
+			put("Right X", 4);			//-1 to 1
+			put("Right Y", 5);			//-1 to 1
+		
+		}
+	};
+
 	
 	
 	

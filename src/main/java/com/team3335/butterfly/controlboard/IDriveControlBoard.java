@@ -5,24 +5,15 @@ public interface IDriveControlBoard {
 	
 	
 	public double getDriveForward();
-
 	public double getDriveForward2();
-	
 	public double getDriveSideway();
-	
 	public double getDriveRotation();
+
+	public boolean getToggleDriveType();
+	public boolean getDriveButton1();
+	public boolean getDriveButton2();
 	
-	public boolean getToggleDriveMode();
-	
-	public boolean getToggleWheelState();
-	
-	public boolean getForceSkidSteer();
-	
-	public boolean getForceMecanum();
-	
-	public boolean getToggleBrake();
-	
-	public boolean getUseAssist();
+	public boolean getUseAssist();	//TODO IDK, obselete at this point?
 
 	public boolean getHatchPusher();	//TODO Move to assistant controller
 }

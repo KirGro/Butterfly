@@ -33,7 +33,7 @@ public class Drivetrain extends Subsystem{
     private PeriodicIO mPeriodicIO = new PeriodicIO();
 	
 	private final Loop mLoop = new Loop() {
-        @Override
+		@Override
         public void onStart(double timestamp) {
             synchronized (Drivetrain.this) {
                 setOpenLoop(new DriveIntent(0, 0, 0, 0, DriveModeState.TANK, true));
@@ -63,7 +63,7 @@ public class Drivetrain extends Subsystem{
 
         @Override
         public void onStop(double timestamp) {
-            stop();
+			stop();
             //stopLogging();
         }
     };
@@ -203,17 +203,15 @@ public class Drivetrain extends Subsystem{
 	}
 	
 	@Override
-    public void registerEnabledLoops(ILooper in) {
-        in.register(mLoop);
+	public void registerEnabledLoops(ILooper enabledLooper) {
+		enabledLooper.register(mLoop);
     }
-	
 
 	@Override
 	public boolean checkSystem() {
 		// TODO Auto-generated method stub
 		return false;
 	}
-
 
 	@Override
 	public void outputTelemetry() {
@@ -242,7 +240,6 @@ public class Drivetrain extends Subsystem{
 		
 	}
 
-
 	@Override
 	public void stop() {
 		// TODO Auto-generated method stub
@@ -256,7 +253,6 @@ public class Drivetrain extends Subsystem{
 		mBackRight.zeroEncoder();
 		mBackLeft.zeroEncoder();
 	}
-	
 
     @Override
     public synchronized void readPeriodicInputs() {
@@ -287,7 +283,6 @@ public class Drivetrain extends Subsystem{
         mPeriodicIO.back_left_distance += deltaBackLeftTicks * Constants.kDrivetrainWheelDiameterInches;
 
     }
-	
 
     public static class PeriodicIO {
         // INPUTS

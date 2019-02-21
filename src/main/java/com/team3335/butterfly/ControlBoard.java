@@ -13,7 +13,7 @@ public class ControlBoard implements IControlBoard{
 	    }
 
 	    private IDriveControlBoard mDriveControlBoard;
-	    private IAssisstantControlBoard mAssisstantControlBoard;
+	    private IAssistantControlBoard mAssistantControlBoard;
 
 	    private ControlBoard() {
 	        if (Constants.kUseGamepadForDriving) {
@@ -23,51 +23,85 @@ public class ControlBoard implements IControlBoard{
 	        }
 
 	        if (Constants.kUseGamepadForButtons) {
-	            //mAssisstantControlBoard = GamepadAssisstantControlBoard.getInstance();
+	            mAssistantControlBoard = GamepadAssistantControlBoard.getInstance();
 	        } else {
-	            //mAssisstantControlBoard = MainAssisstantBoard.getInstance();
+	            //mAssisstantControlBoard = MainAssistantBoard.getInstance();
 	        }
 	    }
 
 	@Override
 	public double getDriveForward() {
-		return mapDeadband(mDriveControlBoard.getDriveForward());
+		if(Preferences.kJoystickDeadbandEarlyMap)return mapDeadband(mDriveControlBoard.getDriveForward());
+		else return mDriveControlBoard.getDriveForward();
 	}
 	
 
 	@Override
 	public double getDriveForward2() {
-		return mapDeadband(mDriveControlBoard.getDriveForward2());
+		if(Preferences.kJoystickDeadbandEarlyMap)return mapDeadband(mDriveControlBoard.getDriveForward2());
+		else return mDriveControlBoard.getDriveForward2();
 	}
 
 	@Override
 	public double getDriveSideway() {
-		return mapDeadband(mDriveControlBoard.getDriveSideway());
+		if(Preferences.kJoystickDeadbandEarlyMap)return mapDeadband(mDriveControlBoard.getDriveSideway());
+		else return mDriveControlBoard.getDriveSideway();
 	}
 
 	@Override
 	public double getDriveRotation() {
-		return mapDeadband(mDriveControlBoard.getDriveRotation());
+		if(Preferences.kJoystickDeadbandEarlyMap)return mapDeadband(mDriveControlBoard.getDriveRotation());
+		else return mDriveControlBoard.getDriveRotation();
 	}
 
 	@Override
 	public boolean getToggleDriveMode() {
-		return mDriveControlBoard.getToggleDriveMode();
+		return mAssistantControlBoard.getToggleDriveMode();
 	}
 
 	@Override
 	public boolean getToggleWheelState() {
-		return mDriveControlBoard.getToggleWheelState();
+		return mAssistantControlBoard.getToggleWheelState();
 	}
 
 	@Override
 	public boolean getForceSkidSteer() {
-		return mDriveControlBoard.getForceSkidSteer();
+		return mAssistantControlBoard.getForceSkidSteer();
 	}
 
 	@Override
 	public boolean getForceMecanum() {
-		return mDriveControlBoard.getForceMecanum();
+		return mAssistantControlBoard.getForceMecanum();
+	}
+
+	@Override
+	public boolean getToggleBrake() {
+		return mAssistantControlBoard.getToggleBrake();
+	}
+	
+	@Override 
+	public boolean getUseAssist() {
+		return mDriveControlBoard.getUseAssist();
+	}
+
+	@Override 
+	public boolean getHatchPusher() {
+		return mDriveControlBoard.getHatchPusher();
+	}
+
+	@Override
+	public boolean getToggleDriveType() {
+		return mDriveControlBoard.getToggleDriveType();
+	}
+
+	@Override
+	public boolean getDriveButton1() {
+		return mDriveControlBoard.getDriveButton1();
+	}
+
+	@Override
+	public boolean getDriveButton2() {
+		return mDriveControlBoard.getDriveButton2();
 	}
 	
 	private double mapDeadband(double value) {
@@ -88,20 +122,5 @@ public class ControlBoard implements IControlBoard{
 	public enum JoystickControlBoardType{
 		ATTACK3,
 		PRO_3D
-	}
-
-	@Override
-	public boolean getToggleBrake() {
-		return mDriveControlBoard.getToggleBrake();
-	}
-	
-	@Override 
-	public boolean getUseAssist() {
-		return mDriveControlBoard.getUseAssist();
-	}
-
-	@Override 
-	public boolean getHatchPusher() {
-		return mDriveControlBoard.getHatchPusher();
 	}
 }

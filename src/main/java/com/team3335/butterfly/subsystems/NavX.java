@@ -1,6 +1,7 @@
 package com.team3335.butterfly.subsystems;
 
 import com.kauailabs.navx.frc.AHRS;
+import com.team3335.butterfly.loops.ILooper;
 import com.team3335.butterfly.loops.Loop;
 import com.team3335.butterfly.subsystems.Subsystem;
 
@@ -81,10 +82,14 @@ public class NavX extends Subsystem {
 		
 		SmartDashboard.putString(   "NavX: FirmwareVersion",      mPeriodicIO.firmwareVersion);
 	}
+	
+	@Override
+	public void zeroSensors() {
+		zeroYaw();
+	}
 
 	@Override
 	public boolean checkSystem() {
-		zeroYaw();
 		return false;
 	}
 
@@ -92,6 +97,11 @@ public class NavX extends Subsystem {
 	public void stop() {
 
 	}
+	
+	@Override
+	public void registerEnabledLoops(ILooper enabledLooper) {
+		enabledLooper.register(mLoop);
+    }
 	
     @Override
     public synchronized void readPeriodicInputs() {

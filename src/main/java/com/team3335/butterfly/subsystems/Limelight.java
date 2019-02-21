@@ -4,6 +4,7 @@ import edu.wpi.first.networktables.NetworkTableEntry;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
+import com.team3335.butterfly.loops.ILooper;
 import com.team3335.butterfly.loops.Loop;
 import com.team3335.butterfly.vision.*;
 
@@ -70,13 +71,21 @@ public class Limelight extends Subsystem implements IVisionTarget{
 		BALL;
 		
 		protected static Target[] targets = Target.values();
+		public Target next() {
+	        return targets[(this.ordinal()+1) % targets.length];
+		}
+		
+		public Target prev() {
+			int p = this.ordinal()-1;
+			return p>=0 ? targets[p] : targets[targets.length-1];
+		}
 	}
 
 	public enum LightMode {
 		DEFAULT,
-		ON,
+		OFF,
 		BLINK,
-		OFF;
+		ON;
 
 		protected static LightMode[] lightModes = LightMode.values();
 	}
@@ -150,6 +159,11 @@ public class Limelight extends Subsystem implements IVisionTarget{
 	}
 	
 	@Override
+	public void registerEnabledLoops(ILooper enabledLooper) {
+		enabledLooper.register(mLoop);
+    }
+	
+	@Override
     public synchronized void readPeriodicInputs() {
 		mPeriodicIO.hasTarget = getValue("tv").getDouble(0) == 1;
 		mPeriodicIO.tx = getValue("tx").getDouble(0.00);
@@ -178,6 +192,8 @@ public class Limelight extends Subsystem implements IVisionTarget{
 		public double ty;
 		public double ta;
 		public double ts;
+
+		//Outputs
 		public Target targetSelected;
 		public StreamMode streamMode;
 		public LightMode lightMode;

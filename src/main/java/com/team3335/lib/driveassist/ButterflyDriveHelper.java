@@ -1,9 +1,11 @@
-package com.team3335.lib.util;
+package com.team3335.lib.driveassist;
 
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
-import com.team3335.butterfly.Constants;
+import com.team3335.butterfly.Preferences;
 import com.team3335.butterfly.states.DrivetrainState.*;
+import com.team3335.lib.util.DriveIntent;
+import com.team3335.lib.util.LogisticalGrowthMap;
 
 public class ButterflyDriveHelper {
 	
@@ -41,8 +43,8 @@ public class ButterflyDriveHelper {
 	}
 
 	public double map(double value) {
-		if(Constants.kUseSinMapping) {
-			return value; //TODO
+		if(Preferences.pUseLogisticalGrowthMapping) {
+			return LogisticalGrowthMap.map(value, LogisticalGrowthMap.joystickConstants);
 		} else {
 			return value==0 ? 0 : value*value*(Math.abs(value)/value);
 		}
@@ -53,34 +55,23 @@ public class ButterflyDriveHelper {
 	}
 	
 	private DriveIntent fieldRelative(double f, double s, double r, double h, DriveModeState driveMode, DrivetrainWheelState driveWheelState, boolean brake, boolean visionDriving) {
-		//TODO MAKE FEILD RELATIVE
 		double mFR, mFL, mBR, mBL;
-		//SmartDashboard.putNumber("Recieved Heading", h);
-
-		//double costheta = Math.abs(h);
-		//double sintheta = (Math.abs(h)>90);
-		double h1 = Math.abs(h);//= h>=0?h:180-h;
-		double h2 = (180-h)*Math.abs(h)/h;
 
 		double hcorrect = h<0?360+h:h;
-		h1=hcorrect;
-		h2=hcorrect;
 		
 
-		double fo = Math.cos(Math.toRadians(h1));//*(Math.abs(h)>90?-1:1);
-		double si = -Math.sin(Math.toRadians(h2));//*(h>0?-1:1);
-		SmartDashboard.putNumber("\"Cos\"", fo);
-		SmartDashboard.putNumber("\"Sin\"", si);
+		double fo = Math.cos(Math.toRadians(hcorrect));
+		double si = -Math.sin(Math.toRadians(hcorrect));
+		//SmartDashboard.putNumber("\"Cos\"", fo);
+		//SmartDashboard.putNumber("\"Sin\"", si);
 
 		double forward = fo*f+si*s;
 		double sideway = fo*s+si*f;
-		SmartDashboard.putNumber("\"Forward\"", forward);
-		SmartDashboard.putNumber("\"Sideway\"", sideway);
+		//SmartDashboard.putNumber("\"Forward\"", forward);
+		//SmartDashboard.putNumber("\"Sideway\"", sideway);
 
-		//if(h<0)forward*=-1;
 		if(Math.abs(h)>=45&&Math.abs(h)<=135) sideway*=-1;
-		//sideway*=-1;
-		sideway*=1.5;
+		sideway*=Preferences.pMecanumSidewaysScalar;
 
 		mFR = forward + sideway + r;
 		mFL = forward - sideway - r;
@@ -105,11 +96,6 @@ public class ButterflyDriveHelper {
 			mBL*=.5;
 		}
 		oldDriveIntent = new DriveIntent(mFR, mFL, mBR, mBL, driveMode, true);
-		//SmartDashboard.putNumber("FR Field", mFR);
-		//SmartDashboard.putNumber("FL Field", mFL);
-		//SmartDashboard.putNumber("BR Field", mBR);
-		//SmartDashboard.putNumber("BL Field", mBL);
-
 		return oldDriveIntent;
 	}
 	

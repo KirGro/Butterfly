@@ -3,6 +3,7 @@ package com.team3335.butterfly.subsystems;
 import com.ctre.phoenix.motorcontrol.ControlMode;
 import com.ctre.phoenix.motorcontrol.can.VictorSPX;
 import com.team3335.butterfly.Constants;
+import com.team3335.butterfly.loops.ILooper;
 import com.team3335.butterfly.loops.Loop;
 import com.team3335.butterfly.subsystems.Subsystem;
 import com.team3335.lib.util.ChoosableSolenoid;
@@ -76,6 +77,7 @@ public class Carriage extends Subsystem {
 	/* All Solenoid Controls */
 
 	public void launchHatch(){
+		SmartDashboard.putNumber("launchHatch Last Called", Timer.getFPGATimestamp());
 		if(!mInLaunchCycle) {
 			mInLaunchCycle = true;
 			mLastLaunchTime = Timer.getFPGATimestamp();
@@ -120,6 +122,7 @@ public class Carriage extends Subsystem {
 	private void updateSolenoids(){
 		mHatchPusher.setState(mHatchPusherState);
 		mHatchPickup.setState(mHatchPickupState);
+		SmartDashboard.putNumber("updateSolenoids Last Call", Timer.getFPGATimestamp());
 	}
 
 	/* All Motor Controls */
@@ -131,6 +134,7 @@ public class Carriage extends Subsystem {
 	public void outputTelemetry() {
 		SmartDashboard.putString("Pusher State", mHatchPusherState.name());
 		SmartDashboard.putString("Pickup State", mHatchPickupState.name());
+		SmartDashboard.putBoolean("In Launch Cycle", mInLaunchCycle);
 	}
 
 	@Override
@@ -143,6 +147,11 @@ public class Carriage extends Subsystem {
 		pickupUp();
 		pusherIn();
 	}
+
+	@Override
+	public void registerEnabledLoops(ILooper enabledLooper) {
+		enabledLooper.register(mLoop);
+    }
 
 	public static class PeriodicIO {
 	}

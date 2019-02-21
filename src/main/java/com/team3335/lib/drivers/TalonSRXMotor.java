@@ -115,9 +115,9 @@ public class TalonSRXMotor extends Motor implements IAdvancedMotor{
         talon.setControlFramePeriod(ControlFrame.Control_3_General, config.CONTROL_FRAME_PERIOD_MS);
 
         return talon;
-        }
+    }
 	
-	private EncoderType encoderType;
+        private EncoderType encoderType;
 	private FeedbackType feedbackType;
         private TalonSRX talonMotor;
         private double encoderToOutputRatio;
@@ -192,7 +192,7 @@ public class TalonSRXMotor extends Motor implements IAdvancedMotor{
 
 	@Override
 	public int getEncoderPosition() {
-		return talonMotor.getSelectedSensorPosition();
+	        return talonMotor.getSelectedSensorPosition();
 	}
 	
 	@Override

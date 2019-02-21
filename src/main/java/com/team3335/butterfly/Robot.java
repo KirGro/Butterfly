@@ -7,39 +7,60 @@ import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import com.team3335.butterfly.loops.Looper;
 import com.team3335.butterfly.states.DrivetrainState.DriveModeState;
+import com.team3335.butterfly.states.DrivetrainState.DriveType;
 import com.team3335.butterfly.states.DrivetrainState.DrivetrainWheelState;
 import com.team3335.butterfly.subsystems.*;
 import com.team3335.butterfly.subsystems.Limelight.Target;
-import com.team3335.butterfly.vision.VisionTargetDriver;
-import com.team3335.lib.util.ButterflyDriveHelper;
+import com.team3335.lib.driveassist.*;
 import com.team3335.lib.util.LatchedBoolean;
 
 public class Robot extends TimedRobot {
     private Looper mEnabledLooper = new Looper();
     private Looper mDisabledLooper = new Looper();
+
     private ButterflyDriveHelper mButterflyDriveHelper = new ButterflyDriveHelper();
     private VisionTargetDriver mVisionTargetDriver = new VisionTargetDriver();
+    //private DriveAssistant mDriveAssistant = new DriveAssistant();
     private IControlBoard mControlBoard = ControlBoard.getInstance();
     
     private final SubsystemManager mSubsystemManager = new SubsystemManager(
             Arrays.asList(
+                    //TODO Add PreferenceHandler once finished
                     Drivetrain.getInstance(),
                     NavX.getInstance(),
                     Carriage.getInstance(),
                     Limelight.getInstance()
-
             )
     );
- 
-    private Limelight mLimelight = Limelight.getInstance();
+
     private Drivetrain mDrivetrain = Drivetrain.getInstance();
     private NavX mNavX = NavX.getInstance();
     private Carriage mCarriage = Carriage.getInstance();
+    private Limelight mLimelight = Limelight.getInstance();
     
-    private LatchedBoolean mToggleDriveModeStatePressed = new LatchedBoolean();
-    private LatchedBoolean mToggleDrivetrainWheelStatePressed = new LatchedBoolean();
-    private LatchedBoolean mToggleBrakePressed = new LatchedBoolean();
+    //Buttons
+    private LatchedBoolean mToggleDriveType = new LatchedBoolean();
+    private LatchedBoolean mDriveButton1 = new LatchedBoolean();
+    private LatchedBoolean mDriveButton2 = new LatchedBoolean();
     private LatchedBoolean mFireHatch = new LatchedBoolean();
+
+    
+    /* STORAGE */
+
+    //Drivetrain
+    private DriveType type = Preferences.pDefaultDriveType;
+
+    //CUSTOM
+    private DrivetrainWheelState wheelState = Preferences.pDefaultDrivetrainWheelState;
+    private DriveModeState mecanumModeState = Preferences.pMecanumDefaultMode;
+    private DriveModeState skidModeState = Preferences.pSkidSteerDefaultMode;
+
+    //AUTO_SWITCHING
+    private DriveModeState asModeState = DriveModeState.MECANUM_FIELD_RELATIVE;
+    private Target asTarget = Preferences.pDefaultTarget;
+    
+    //FULL_VISION
+    private Target fvTarget = Preferences.pDefaultTarget;
     
     public Robot() {
     	
@@ -69,7 +90,6 @@ public class Robot extends TimedRobot {
     public void teleopInit() {
         SmartDashboard.putString("Match Cycle", "TELEOP");
         mDrivetrain.zeroSensors();
-        mNavX.zeroYaw();
         mDisabledLooper.stop();
         mEnabledLooper.start();
     }
@@ -97,36 +117,80 @@ public class Robot extends TimedRobot {
         SmartDashboard.putString("Match Cycle", "TELEOP");
         double timestamp = Timer.getFPGATimestamp();        
 
-        double forward = mControlBoard.getDriveForward();
-        double forward2 = mControlBoard.getDriveForward2();
-        double sideway = mControlBoard.getDriveSideway();
-        double rotation = mControlBoard.getDriveRotation();
+        /* HANDLE CONTROLLER INPUTS*/
+        double f1 = mControlBoard.getDriveForward();
+        double f2 = mControlBoard.getDriveForward2();
+        double s = mControlBoard.getDriveSideway();
+        double r = mControlBoard.getDriveRotation();
+        boolean toggleDriveType = mToggleDriveType.update(mControlBoard.getToggleDriveType());
+        boolean db1 = mDriveButton1.update(mControlBoard.getDriveButton1());
+        boolean db2 = mDriveButton2.update(mControlBoard.getDriveButton2());
         
-        SmartDashboard.putNumber("Forward", forward);
-        SmartDashboard.putNumber("Sideway", sideway);
-        SmartDashboard.putNumber("Rotation", rotation);
-        
-        boolean tempMode = mToggleDriveModeStatePressed.update(mControlBoard.getToggleDriveMode());
-        boolean tempWheel = mToggleDrivetrainWheelStatePressed.update(mControlBoard.getToggleWheelState());
-        
-        boolean tempBrake = mToggleBrakePressed.update(mControlBoard.getToggleBrake());
-        boolean tempHatch = mFireHatch.update(mControlBoard.getHatchPusher());
+        boolean fireHatch = mFireHatch.update(mControlBoard.getHatchPusher());
+
+        /* HANDLE DRIVETRAIN STUFF */
+        switch(type) {
+            case CUSTOM:
+                if(db1) {
+                    if(wheelState == DrivetrainWheelState.MECANUM) mecanumModeState = mecanumModeState.next();
+                    else skidModeState = skidModeState.next();
+                    while(skidModeState == DriveModeState.MECANUM_FIELD_RELATIVE || skidModeState == DriveModeState.MECANUM_ROBOT_RELATIVE) skidModeState = skidModeState.next();
+                }
+                if(db2) wheelState = wheelState.next();
+                break;
+            case AUTO_SWITCHING:
+                if(db1) asTarget.prev();
+                if(db2) asTarget.next();
+                mLimelight.setPipeline(Target.HATCH);
+                if(mLimelight.hasTarget() && mLimelight.getDistance()<24) asModeState = DriveModeState.MECANUM_ROBOT_RELATIVE;
+                else asModeState = DriveModeState.MECANUM_FIELD_RELATIVE;
+                break;
+            case FULL_VISION:
+                if(db1) asTarget.prev();
+                if(db2) asTarget.next();
+                break;
+
+        }
+        //Send stuff to specific drivetrain helpers to run calculations and then those to drivetrain
+        DriveModeState usingMode = (wheelState==DrivetrainWheelState.SKID_STEER ? skidModeState : mecanumModeState);
+        switch(type) {
+            case CUSTOM:
+                switch(usingMode) {
+    			    case TANK:
+    			    	mDrivetrain.setOpenLoop(mButterflyDriveHelper.butterflyDrive(f1, f2, r, 0, usingMode, wheelState, true));
+    	            	break;
+    			    case ARCADE:
+    	            	mDrivetrain.setOpenLoop(mButterflyDriveHelper.butterflyDrive(f1, s, r, 0, usingMode, wheelState, true));
+    	            	break;
+                    case MECANUM_FIELD_RELATIVE:
+                        mDrivetrain.setOpenLoop(mButterflyDriveHelper.butterflyDrive(f1, s, r, mNavX.getYaw(), usingMode, wheelState, true));
+                        break;
+    			    case MECANUM_ROBOT_RELATIVE:
+    	            	mDrivetrain.setOpenLoop(mButterflyDriveHelper.butterflyDrive(f1, s, r, 0, usingMode, wheelState, true));
+                        break;    
+                }
+                break;
+            case AUTO_SWITCHING:
+                mButterflyDriveHelper.butterflyDrive(f1, s, r, mNavX.getYaw(), asModeState, DrivetrainWheelState.MECANUM, true);
+                break;
+            case FULL_VISION:
+                mVisionTargetDriver.pureVisionDriveControl(fvTarget);
+                break;
+        }
+
+        /* CARRIAGE STUFF */
+
+        if(fireHatch) {
+            mCarriage.launchHatch();
+        }
 
         
-        DriveModeState mode = mDrivetrain.getDriveModeState();
-        DrivetrainWheelState wheel = mDrivetrain.getDrivetrainWheelState();
-        if(tempHatch) {
-            mCarriage.launchHatch();
-            SmartDashboard.putNumber("Last Launch Time", timestamp);
-        }
-        
-        if(tempMode) {
-        	mode = mode.next();
-        }
-        if(tempWheel) {
-        	wheel = wheel.next();
-        	mDrivetrain.setWheelState(wheel);
-        }
+    }
+    
+}
+
+
+        /*
     	if(mLimelight.hasTarget() && mControlBoard.getUseAssist()) {
             //mDrivetrain.setOpenLoop(mVisionTargetDriver.pureVisionDriveRaw(0)); //Old way using raw velocities
             mDrivetrain.setPositionFollowing(mVisionTargetDriver.pureVisionDriveControl(Target.HATCH)); //New way using actual distances and encoders
@@ -146,9 +210,4 @@ public class Robot extends TimedRobot {
     	        	mDrivetrain.setOpenLoop(mButterflyDriveHelper.butterflyDrive(forward, sideway, rotation, 0, mode, wheel, tempBrake));
     	        	break;    			
     		}
-    	}
-        
-        
-    }
-    
-}
+    	}*/
