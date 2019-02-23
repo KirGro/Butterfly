@@ -7,6 +7,7 @@ import com.team3335.butterfly.states.DrivetrainState.*;
 import com.team3335.butterfly.subsystems.Subsystem;
 
 import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import com.team3335.lib.util.ChoosableSolenoid;
 import com.team3335.lib.drivers.IAdvancedMotor;
@@ -152,6 +153,11 @@ public class Drivetrain extends Subsystem{
 
 	public void setPositionFollowing(PathIntent pathIntent){
 		setBrakeMode(pathIntent.getBrakeMode());
+		SmartDashboard.putNumber("PositionLastCallTime", Timer.getFPGATimestamp());
+		SmartDashboard.putNumber("FLPI",pathIntent.getFrontLeftRoations() );
+		SmartDashboard.putNumber("FRPI",pathIntent.getFrontRightRoations() );
+		SmartDashboard.putNumber("BLPI",pathIntent.getBackLeftRoations() );
+		SmartDashboard.putNumber("BRPI",pathIntent.getBackRightRoations() );
 		mFrontRight.setControlPointFromCurrent(pathIntent.getFrontLeftRoations());
 		mFrontLeft.setControlPointFromCurrent(pathIntent.getFrontLeftRoations());
 		mBackRight.setControlPointFromCurrent(pathIntent.getBackRightRoations());

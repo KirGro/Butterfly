@@ -35,8 +35,7 @@ public class Carriage extends Subsystem {
         @Override
         public void onLoop(double timestamp) {
             synchronized (Carriage.this) {
-				double time = Timer.getFPGATimestamp();
-				checkPusherCycleStatus(time);
+				checkPusherCycleStatus(timestamp);
 				updateSolenoids();
             }
         }

@@ -151,6 +151,7 @@ public class Limelight extends Subsystem implements IVisionTarget{
         SmartDashboard.putNumber("Limelight Y", getTy());
         SmartDashboard.putNumber("Limelight S", getTs());
 		SmartDashboard.putNumber("Limelight Area", getTa());
+		SmartDashboard.putNumber("Limelight Distance", getDistance());
 	}
 
 	@Override

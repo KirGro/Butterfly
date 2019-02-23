@@ -7,6 +7,8 @@ import com.ctre.phoenix.motorcontrol.can.TalonSRX;
 import com.ctre.phoenix.motorcontrol.can.TalonSRXPIDSetConfiguration;
 
 import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+
 import com.team3335.butterfly.Constants;
 
 public class TalonSRXMotor extends Motor implements IAdvancedMotor{
@@ -232,7 +234,9 @@ public class TalonSRXMotor extends Motor implements IAdvancedMotor{
         @Override 
         public void setControlPointFromCurrent(double rotations) {
                 int pos = ((int) Math.round(rotations*encoderToOutputRatio)) * Constants.kSRXEncoderCPR;
-                talonMotor.set(ControlMode.Position, pos+getEncoderPosition());
+                int target = pos+getEncoderPosition();
+                talonMotor.set(ControlMode.Position,target);
+                SmartDashboard.putNumber("CanID: "+mCANId+", Target: ", encoderToOutputRatio);
         }
 
         @Override

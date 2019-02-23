@@ -12,9 +12,9 @@ public class HatchTarget implements IVisionTarget{
 	@Override
 	public double getDistance() {
 		//return (Constants.kHatchTargetHeight*Constants.kPixelHeight) / (2*(Limelight.getInstance().getTa()/.15)*Math.tan(Constants.kVerticalFOV)); //Old an innaccurate way
-		return Constants.kCameraDistanceFromFront + //Distance offset to make distance relative to robot front
-			  (Constants.kCameraHeight -	(Constants.kHatchTargetBottomToHatchCenter + Constants.kFloorToLowHatchCenter)) / //Y component of the triangle
-			  (Math.tan((Constants.kCameraAngle - getHeightAngle()) * Math.PI / 180)); //Angle of the triangle
+		return -12 - Constants.kCameraDistanceFromFront - //Distance offset to make distance relative to robot front
+			  (Constants.kCameraHeight + 4.5 - (Constants.kHatchTargetBottomToHatchCenter + Constants.kFloorToLowHatchCenter)) / //Y component of the triangle
+			  (Math.tan(Math.toRadians(Constants.kCameraAngle + getHeightAngle()))); //Angle of the triangle
 	}
 
 	@Override

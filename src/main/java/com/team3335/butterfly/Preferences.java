@@ -13,7 +13,7 @@ public class Preferences {
 
 	//Controller
 	public static boolean kJoystickDeadbandEarlyMap = false;
-	public static boolean pUseLogisticalGrowthMapping = true;
+	public static boolean pUseLogisticalGrowthMapping = false;
 
 	//Vision
 	public static double pMecanumSidewaysScalar = 1.5;

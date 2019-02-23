@@ -32,7 +32,6 @@ public class Elevator extends Subsystem {
         @Override
         public void onLoop(double timestamp) {
             synchronized (Elevator.this) {
-				double time = Timer.getFPGATimestamp();
             }
         }
 

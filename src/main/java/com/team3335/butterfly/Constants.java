@@ -15,7 +15,13 @@ public class Constants {
 	/* FIELD CONSTATNS */
 
 	//Cargo
-    
+	public static final double kFloorToLowCargo = 27.5;
+	public static final double kFloorToMiddleCargo = 55.5;
+	public static final double kFloorToHighCargo = 83.5;
+	
+	public static final double kFloorToBottomCargoShip = 31.5;
+	public static final double kFloorToTopCargoShip = 31.5;
+
     //Hatch
     public static final double kHatchTargetWidth = 14.5;
     public static final double kHatchTargetHeight = 5.75;
@@ -49,12 +55,15 @@ public class Constants {
 	public static final double kMotorToSkidSteerRatio = kMotorToMecanumRatio*kMecanumToSkidSteerRatio;
 
 	//Carriage
+
+	//Elevator
+	public static final double kElevatorMaxTravel = (kRobot == 2 ? 41 : 43); //In inches
 	
 	
 	//Vision
-	public static final double kCameraHeight = 36; //TODO Correct
-	public static final double kCameraAngle = -18; 	//TODO Correct
-	public static final double kCameraDistanceFromFront = 12; //TODO Correct
+	public static final double kCameraHeight = (kRobot == 2 ? 37 + 1/16:36); //TODO Correct
+	public static final double kCameraAngle = (kRobot == 2 ? -13 : -18); 	//TODO Correct
+	public static final double kCameraDistanceFromFront = (kRobot == 2 ? 15 + 5/8 : 12); //TODO Correct
 
 	
 	/* SOFTWARE CONSTANTS / PREFERENCES */
@@ -114,7 +123,7 @@ public class Constants {
 	public static final int kCarriageRollerWheelCANId = -1;	//TODO
 
 	public static final int kCarriageModule = 1;
-	public static final int kHatchPusher = 5;
+	public static final int kHatchPusher = 2;
 	public static final int kHatchPickup = 6;
 	
 		//TODO Add dio for laser distance sensor from REV here

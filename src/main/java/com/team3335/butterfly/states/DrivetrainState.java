@@ -3,10 +3,6 @@ package com.team3335.butterfly.states;
 
 public class DrivetrainState {
 	
-	public double drivetrainAngle = 0;
-	public double drivetrainX = 0; 
-	public double drivetrainY = 0;
-	
 	public DrivetrainWheelState drivetrainWheelState = DrivetrainWheelState.MECANUM;
 	public DriveModeState driveModeState = DriveModeState.MECANUM_ROBOT_RELATIVE;
 	
@@ -44,7 +40,8 @@ public class DrivetrainState {
     
     public enum DriveType {
         CUSTOM,
-        AUTO_SWITCHING,
+		AUTO_SWITCHING,
+		VISION_ASSIST,
         FULL_VISION;
         
         protected static DriveType[] types = DriveType.values();

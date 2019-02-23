@@ -59,6 +59,10 @@ public class Robot extends TimedRobot {
     private DriveModeState asModeState = DriveModeState.MECANUM_FIELD_RELATIVE;
     private Target asTarget = Preferences.pDefaultTarget;
     
+    //VISION ASSIST
+    private boolean inTargetCycle = false;
+    private Target vaTarget = Preferences.pDefaultTarget;
+
     //FULL_VISION
     private Target fvTarget = Preferences.pDefaultTarget;
     
@@ -125,18 +129,33 @@ public class Robot extends TimedRobot {
         boolean toggleDriveType = mToggleDriveType.update(mControlBoard.getToggleDriveType());
         boolean db1 = mDriveButton1.update(mControlBoard.getDriveButton1());
         boolean db2 = mDriveButton2.update(mControlBoard.getDriveButton2());
+        SmartDashboard.putBoolean("db1", db1);
+        SmartDashboard.putBoolean("db2", db2);
+        SmartDashboard.putString("SkidMode", skidModeState.toString());
+        SmartDashboard.putString("MecanumMode", mecanumModeState.toString());
         
         boolean fireHatch = mFireHatch.update(mControlBoard.getHatchPusher());
+
+        if(toggleDriveType) type = type.next();
+        SmartDashboard.putString("Type", type.toString());
 
         /* HANDLE DRIVETRAIN STUFF */
         switch(type) {
             case CUSTOM:
                 if(db1) {
-                    if(wheelState == DrivetrainWheelState.MECANUM) mecanumModeState = mecanumModeState.next();
-                    else skidModeState = skidModeState.next();
-                    while(skidModeState == DriveModeState.MECANUM_FIELD_RELATIVE || skidModeState == DriveModeState.MECANUM_ROBOT_RELATIVE) skidModeState = skidModeState.next();
+                    if(wheelState == DrivetrainWheelState.MECANUM) {
+                        mecanumModeState = mecanumModeState.next();
+                    } else {
+                        skidModeState = skidModeState.next();
+                        while (skidModeState == DriveModeState.MECANUM_FIELD_RELATIVE || skidModeState == DriveModeState.MECANUM_ROBOT_RELATIVE) {
+                            skidModeState = skidModeState.next();
+                        }
+                    }
+
                 }
-                if(db2) wheelState = wheelState.next();
+                if(db2) {
+                    wheelState = wheelState.next();
+                }
                 break;
             case AUTO_SWITCHING:
                 if(db1) asTarget.prev();
@@ -144,6 +163,11 @@ public class Robot extends TimedRobot {
                 mLimelight.setPipeline(Target.HATCH);
                 if(mLimelight.hasTarget() && mLimelight.getDistance()<24) asModeState = DriveModeState.MECANUM_ROBOT_RELATIVE;
                 else asModeState = DriveModeState.MECANUM_FIELD_RELATIVE;
+                break;
+            case VISION_ASSIST:
+                if(db1) {
+
+                }
                 break;
             case FULL_VISION:
                 if(db1) asTarget.prev();
@@ -153,6 +177,7 @@ public class Robot extends TimedRobot {
         }
         //Send stuff to specific drivetrain helpers to run calculations and then those to drivetrain
         DriveModeState usingMode = (wheelState==DrivetrainWheelState.SKID_STEER ? skidModeState : mecanumModeState);
+        mDrivetrain.setWheelState(wheelState);
         switch(type) {
             case CUSTOM:
                 switch(usingMode) {
@@ -171,10 +196,12 @@ public class Robot extends TimedRobot {
                 }
                 break;
             case AUTO_SWITCHING:
-                mButterflyDriveHelper.butterflyDrive(f1, s, r, mNavX.getYaw(), asModeState, DrivetrainWheelState.MECANUM, true);
+                mDrivetrain.setOpenLoop(mButterflyDriveHelper.butterflyDrive(f1, s, r, mNavX.getYaw(), asModeState, DrivetrainWheelState.MECANUM, true));
+                break;
+            case VISION_ASSIST:
                 break;
             case FULL_VISION:
-                mVisionTargetDriver.pureVisionDriveControl(fvTarget);
+                mDrivetrain.setPositionFollowing(mVisionTargetDriver.pureVisionDriveControl(fvTarget));
                 break;
         }
 
