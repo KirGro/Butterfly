@@ -16,4 +16,5 @@ public interface IDriveControlBoard {
 	public boolean getUseAssist();	//TODO IDK, obselete at this point?
 
 	public boolean getHatchPusher();	//TODO Move to assistant controller
+	public boolean getHabPickup();
 }

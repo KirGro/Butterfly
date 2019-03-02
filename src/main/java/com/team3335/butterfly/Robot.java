@@ -43,7 +43,7 @@ public class Robot extends TimedRobot {
     private LatchedBoolean mDriveButton1 = new LatchedBoolean();
     private LatchedBoolean mDriveButton2 = new LatchedBoolean();
     private LatchedBoolean mFireHatch = new LatchedBoolean();
-
+    private LatchedBoolean mHabPickup = new LatchedBoolean();
     
     /* STORAGE */
 
@@ -135,6 +135,7 @@ public class Robot extends TimedRobot {
         SmartDashboard.putString("MecanumMode", mecanumModeState.toString());
         
         boolean fireHatch = mFireHatch.update(mControlBoard.getHatchPusher());
+        boolean habPickup = mHabPickup.update(mControlBoard.getHabPickup());
 
         if(toggleDriveType) type = type.next();
         SmartDashboard.putString("Type", type.toString());
@@ -199,6 +200,11 @@ public class Robot extends TimedRobot {
                 mDrivetrain.setOpenLoop(mButterflyDriveHelper.butterflyDrive(f1, s, r, mNavX.getYaw(), asModeState, DrivetrainWheelState.MECANUM, true));
                 break;
             case VISION_ASSIST:
+                if(mControlBoard.getDriveButton1()){
+                    mDrivetrain.setPositionFollowing(mVisionTargetDriver.pureVisionDriveControl(fvTarget));
+                } else {
+                    mDrivetrain.setOpenLoop(mButterflyDriveHelper.butterflyDrive(f1, s, r, 0, DriveModeState.MECANUM_ROBOT_RELATIVE, DrivetrainWheelState.SKID_STEER, true));
+                }
                 break;
             case FULL_VISION:
                 mDrivetrain.setPositionFollowing(mVisionTargetDriver.pureVisionDriveControl(fvTarget));
@@ -208,7 +214,15 @@ public class Robot extends TimedRobot {
         /* CARRIAGE STUFF */
 
         if(fireHatch) {
-            mCarriage.launchHatch();
+            mCarriage.placeHatchCargoship();
+        } else if(habPickup) {
+            mCarriage.habPickup();
+        }
+
+        if(mControlBoard.getUseAssist()) {
+            mCarriage.setShootForward();
+        } else {
+            mCarriage.stopRollers();
         }
 
         

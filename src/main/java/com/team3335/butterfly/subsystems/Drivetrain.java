@@ -1,5 +1,6 @@
 package com.team3335.butterfly.subsystems;
 
+import com.ctre.phoenix.motorcontrol.can.TalonSRXPIDSetConfiguration;
 import com.team3335.butterfly.*;
 import com.team3335.butterfly.loops.ILooper;
 import com.team3335.butterfly.loops.Loop;
@@ -94,6 +95,11 @@ public class Drivetrain extends Subsystem{
 		mFrontLeft.setEncoderToOutputRatio(Constants.kGearRatio2);
 		mBackRight.setEncoderToOutputRatio(Constants.kGearRatio2);
 		mBackLeft.setEncoderToOutputRatio(Constants.kGearRatio2);
+
+		mFrontRight.configForPathFollowing(new TalonSRXPIDSetConfiguration());
+		mFrontLeft.configForPathFollowing(new TalonSRXPIDSetConfiguration());
+		mBackRight.configForPathFollowing(new TalonSRXPIDSetConfiguration());
+		mBackLeft.configForPathFollowing(new TalonSRXPIDSetConfiguration());
 		
 		//Create shifters
 		if(Constants.kDrivetrainUsingSpringSolenoids) {

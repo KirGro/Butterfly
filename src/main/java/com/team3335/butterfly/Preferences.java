@@ -11,6 +11,21 @@ public class Preferences {
 	public static boolean pUseDrivetrainWearPrevention = false; //TODO Feature not currently available - Attempts to decrease wear on drivetrain during extreme using by dynamically adjusting speed and drivetrain state
 	public static DriveType pDefaultDriveType = DriveType.CUSTOM;
 
+	public static double kDriveP = .6;
+	public static double kDriveI = .00001;
+	public static double kDriveD = 50;
+
+
+	//Carriage
+	public static double pControlPower = .1;
+
+	public static double kPusherTime = 1.5;
+	public static boolean kUsePusherCooldown = true;
+	public static double kCooldownTime = 1.;
+
+	public static double kHabPickupDelay = 1;
+	
+
 	//Controller
 	public static boolean kJoystickDeadbandEarlyMap = false;
 	public static boolean pUseLogisticalGrowthMapping = false;

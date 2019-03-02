@@ -10,6 +10,7 @@ import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
 import com.team3335.butterfly.Constants;
+import com.team3335.butterfly.Preferences;
 
 public class TalonSRXMotor extends Motor implements IAdvancedMotor{
 
@@ -122,7 +123,7 @@ public class TalonSRXMotor extends Motor implements IAdvancedMotor{
         private EncoderType encoderType;
 	private FeedbackType feedbackType;
         private TalonSRX talonMotor;
-        private double encoderToOutputRatio;
+        private double encoderToOutputRatio = -.8;
 	
 	public TalonSRXMotor(int CANId) {
 		this(CANId, -1, EncoderType.NONE);
@@ -216,14 +217,14 @@ public class TalonSRXMotor extends Motor implements IAdvancedMotor{
         
         @Override 
         public void configForPathFollowing(TalonSRXPIDSetConfiguration configPID) {
-                talonMotor.selectProfileSlot(0, 0);
-                talonMotor.configurePID(configPID, 0, kTimeoutMs, true);
-                talonMotor.config_kP(0, .9, Constants.kLongCANTimeoutMs);
-                talonMotor.config_kI(0, 0, Constants.kLongCANTimeoutMs);
-                talonMotor.config_kD(0, 10, Constants.kLongCANTimeoutMs);
+                //talonMotor.selectProfileSlot(0, 0);
+                //talonMotor.configurePID(configPID, 0, kTimeoutMs, true);
+                talonMotor.config_kP(0, Preferences.kDriveP, Constants.kLongCANTimeoutMs);
+                talonMotor.config_kI(0, Preferences.kDriveI, Constants.kLongCANTimeoutMs);
+                talonMotor.config_kD(0, Preferences.kDriveD, Constants.kLongCANTimeoutMs);
                 talonMotor.config_kF(0, 0, Constants.kLongCANTimeoutMs);
                 talonMotor.config_IntegralZone(0, 0, Constants.kLongCANTimeoutMs);
-                talonMotor.configNeutralDeadband(0.0, 0);
+                //talonMotor.configNeutralDeadband(0.0, 0);
         }
 
         @Override
@@ -233,10 +234,10 @@ public class TalonSRXMotor extends Motor implements IAdvancedMotor{
 
         @Override 
         public void setControlPointFromCurrent(double rotations) {
-                int pos = ((int) Math.round(rotations*encoderToOutputRatio)) * Constants.kSRXEncoderCPR;
+                int pos = ((int) Math.round(rotations/encoderToOutputRatio)) * Constants.kSRXEncoderCPR;
                 int target = pos+getEncoderPosition();
                 talonMotor.set(ControlMode.Position,target);
-                SmartDashboard.putNumber("CanID: "+mCANId+", Target: ", encoderToOutputRatio);
+                SmartDashboard.putNumber("CanID: "+mCANId+", Target: ", target);
         }
 
         @Override

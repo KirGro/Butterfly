@@ -1,5 +1,7 @@
 package com.team3335.lib.driveassist;
 
+import java.nio.file.Path;
+
 import com.team3335.butterfly.Constants;
 import com.team3335.butterfly.states.DrivetrainState.*;
 import com.team3335.butterfly.subsystems.Limelight;
@@ -82,6 +84,7 @@ public class VisionTargetDriver {
         if(mLimelight.getTargetSelected()!=target) {
             mLimelight.setPipeline(target);
         }
+        //return fixInOrder();
         return directVectorTravel();
     }
 
@@ -97,11 +100,18 @@ public class VisionTargetDriver {
         }
 
         double angle = mLimelight.getSidewaysAngle();
-        double distanceInches = mLimelight.getDistance()/10;
+        double distanceInches = mLimelight.getDistance();
+        if(distanceInches <1 || !mLimelight.hasTarget()) {
+            return PathIntent.STOPED;
+        }
 
         //Run distance calculations
         double rotationInches = distanceInches*Math.PI*angle/180;
         double sidewaysInches = distanceInches * Math.tan(lastGoodS) * (lastGoodS<-45 ? 1 : -1);
+
+        if(distanceInches>36) {
+            sidewaysInches = 0;
+        }
 
         //rot = angle/360   x   wheelWidth x pi / circumference
         //Calculate wheel rotations
@@ -110,12 +120,77 @@ public class VisionTargetDriver {
         double forwardRotations = distanceInches / (Constants.kDrivetrainWheelDiameterInches * Math.PI);
 
         
+        turningRotations*= -10;
+        sideRotations*= .5;
+        forwardRotations*= .5;
+
+        
 		double mFR = (forwardRotations + sideRotations + turningRotations);
 		double mFL = (forwardRotations - sideRotations - turningRotations);
 		double mBR = (forwardRotations - sideRotations + turningRotations);
 		double mBL = (forwardRotations + sideRotations - turningRotations);
 
+        SmartDashboard.putNumber("ForwardR", forwardRotations);
+        SmartDashboard.putNumber("SidewayR", sideRotations);
+        SmartDashboard.putNumber("TurningR", turningRotations);
+
+        return new PathIntent(mFR, mFL, mBR, mBL, DriveModeState.MECANUM_ROBOT_RELATIVE, true);
+    }
+
+    private PathIntent fixInOrder() {
+        //Grab values
+        double scew = mLimelight.getSidewaysAngle();
+        if(scew!=0&&scew!=-90) {
+            lastGoodS = (lastGoodS<-45 ? 90-scew : -scew);
+            lastGoodSTime = Timer.getFPGATimestamp();  
+        }
+        if(Timer.getFPGATimestamp()-lastGoodSTime>5) {
+            lastGoodS = 0;
+        }
+
+        double angle = mLimelight.getSidewaysAngle();
+        double distanceInches = mLimelight.getDistance();
+        if(distanceInches <1 || !mLimelight.hasTarget()) {
+            return PathIntent.STOPED;
+        }
+
+        //Run distance calculations
+        double rotationInches = distanceInches*Math.PI*angle/180;
+        double sidewaysInches = distanceInches * Math.tan(lastGoodS) * (lastGoodS<-45 ? 1 : -1);
+        double forwardInches = distanceInches / Math.tan(lastGoodS) * (lastGoodS<-45 ? 1 : -1);
+
+        if(distanceInches>36) {
+            sidewaysInches = 0;
+        }
+
+        //rot = angle/360   x   wheelWidth x pi / circumference
+        //Calculate wheel rotations
+        double turningRotations = (angle * Constants.kMecanumWheelWidth) / (360 * Constants.kDrivetrainWheelDiameterInches);
+        double sideRotations = sidewaysInches / (Constants.kDrivetrainWheelDiameterInches * Math.PI);
+        double forwardRotations = forwardInches / (Constants.kDrivetrainWheelDiameterInches * Math.PI);
+        turningRotations*= -20;
+        sideRotations*= 1;
+        forwardRotations*= .5;
+
+
+        if(angle>2) {
+            sideRotations = 0;
+            forwardRotations = 0;
+        } else if(distanceInches > 36) {
+        } else if(angle>1) {
+            //sideRotations = 0;
+            //forwardRotations = 0;
+        } 
+
         
+		double mFR = (forwardRotations + sideRotations + turningRotations);
+		double mFL = (forwardRotations - sideRotations - turningRotations);
+		double mBR = (forwardRotations - sideRotations + turningRotations);
+		double mBL = (forwardRotations + sideRotations - turningRotations);
+
+        SmartDashboard.putNumber("ForwardR", forwardRotations);
+        SmartDashboard.putNumber("SidewayR", sideRotations);
+        SmartDashboard.putNumber("TurningR", turningRotations);
 
         return new PathIntent(mFR, mFL, mBR, mBL, DriveModeState.MECANUM_ROBOT_RELATIVE, true);
     }

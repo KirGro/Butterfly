@@ -7,6 +7,8 @@ public class PathIntent {
 	
 	private boolean mBrakeMode;
 	private DriveModeState mDMS;
+
+	public static PathIntent STOPED = new PathIntent(0,0,0,0, DriveModeState.MECANUM_ROBOT_RELATIVE, true);
 	
 	
 	

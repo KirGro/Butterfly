@@ -47,7 +47,7 @@ public class GamepadDriveControlBoard implements IDriveControlBoard{
 	
 	@Override
 	public boolean getUseAssist() {
-		return mJoystick.getRawButton(4); //TODO Random, possibly obselete
+		return mJoystick.getRawButton(Constants.buttonNameToId.get("Start"));
 	}
 
 	@Override
@@ -62,11 +62,16 @@ public class GamepadDriveControlBoard implements IDriveControlBoard{
 
 	@Override
 	public boolean getDriveButton1() {
-		return mJoystick.getRawButton(5);//Constants.buttonNameToId.get("Left Shoulder"));
+		return mJoystick.getRawButton(Constants.buttonNameToId.get("Left Shoulder"));
 	}
 
 	@Override
 	public boolean getDriveButton2() {
-		return mJoystick.getRawButton(6);//Constants.buttonNameToId.get("Right Shoulder"));
+		return mJoystick.getRawButton(Constants.buttonNameToId.get("Right Shoulder"));
+	}
+
+	@Override
+	public boolean getHabPickup() {
+		return mJoystick.getRawButton(Constants.buttonNameToId.get("B"));
 	}
 }

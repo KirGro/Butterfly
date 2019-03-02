@@ -54,7 +54,7 @@ public class Elevator extends Subsystem {
 		mWinchMaster = new TalonSRX(Constants.kMasterWinchCANId);
 		mWinchSlave1 = new VictorSPX(Constants.kSlave1WinchCANId);
 		//Set robot intial settings
-
+		mWinchSlave1.follow(mWinchMaster);
 		
 
 	}

@@ -1,10 +1,16 @@
 package com.team3335.butterfly.subsystems;
 
 import com.ctre.phoenix.motorcontrol.ControlMode;
+import com.ctre.phoenix.motorcontrol.NeutralMode;
 import com.ctre.phoenix.motorcontrol.can.VictorSPX;
 import com.team3335.butterfly.Constants;
+import com.team3335.butterfly.Preferences;
 import com.team3335.butterfly.loops.ILooper;
 import com.team3335.butterfly.loops.Loop;
+import com.team3335.butterfly.states.CarriageState;
+import com.team3335.butterfly.states.CarriageState.ArmAction;
+import com.team3335.butterfly.states.CarriageState.RollerAction;
+import com.team3335.butterfly.states.CarriageState.RollerWheelState;
 import com.team3335.butterfly.subsystems.Subsystem;
 import com.team3335.lib.util.ChoosableSolenoid;
 import com.team3335.lib.util.ChoosableSolenoid.SolenoidState;
@@ -17,12 +23,19 @@ public class Carriage extends Subsystem {
 	
 	private ChoosableSolenoid mHatchPusher, mHatchPickup;
 	private SolenoidState mHatchPusherState, mHatchPickupState;
-	private double mLastLaunchTime;
-	private boolean mInLaunchCycle;
+	//private double mLastLaunchTime;
+	//private boolean mInLaunchCycle;
 
 	private VictorSPX mRollerWheels;
+	private RollerWheelState mRollerWheelState;
+	private RollerAction mRollerAction;
+	private ArmAction mArmAction;
+	private boolean mInAction;
+	private double mActionStartTime;
 
 	private PeriodicIO mPeriodicIO = new PeriodicIO();
+
+	private CarriageState mCurrentState;
 	
 	private final Loop mLoop = new Loop() {
         @Override
@@ -66,37 +79,59 @@ public class Carriage extends Subsystem {
 		mHatchPusherState = SolenoidState.FORCED_REVERSE;
 		pusherIn();
 		pickupUp();
-		mLastLaunchTime = 0;
-		mInLaunchCycle = false;
 
-		mRollerWheels.set(ControlMode.PercentOutput, 0);
+		mRollerWheels.setNeutralMode(NeutralMode.Brake);
+		mRollerWheels.setInverted(true);
+		stopRollers();
+		mRollerAction = RollerAction.NONE;
+		mRollerWheelState = RollerWheelState.OFF;
+		mArmAction = ArmAction.NONE;
+		mActionStartTime = -1;
+		mInAction = false;
+
 
 	}
 
 	/* All Solenoid Controls */
 
-	public void launchHatch(){
-		SmartDashboard.putNumber("launchHatch Last Called", Timer.getFPGATimestamp());
-		if(!mInLaunchCycle) {
-			mInLaunchCycle = true;
-			mLastLaunchTime = Timer.getFPGATimestamp();
-			if(mHatchPickupState!=SolenoidState.FORCED_REVERSE) {
-				pickupUp();
-			}
+	public void placeHatchCargoship(){
+		if(mArmAction == ArmAction.NONE) {
+			mInAction = true;
+			mArmAction = ArmAction.CARGOSHIP_PLACING;
+			mActionStartTime = Timer.getFPGATimestamp();
+			pickupUp();
 			pusherOut();
 		}
 	}
 
+	public void habPickup() {
+		if(mArmAction == ArmAction.NONE) {
+			mInAction = true;
+			mArmAction = ArmAction.HAB_PICKUP;
+			mActionStartTime = Timer.getFPGATimestamp();
+			pusherIn();
+			pickupDown();
+		}
+	}
+
 	private void checkPusherCycleStatus(double time) {
-		if(mInLaunchCycle) {
-			if(time >= (mLastLaunchTime + Constants.kPusherTime)) {
+		if(mArmAction == ArmAction.CARGOSHIP_PLACING) {
+			if(time >= (mActionStartTime + Preferences.kPusherTime)) {
 				pusherIn();
 			}
-			if(Constants.kUsePusherCooldown && time >= (mLastLaunchTime + Constants.kPusherTime + Constants.kCooldownTime)) {
-				mInLaunchCycle = false;
-			} else if (time >= (mLastLaunchTime + Constants.kPusherTime)){
-				mInLaunchCycle = false;
+			if(Preferences.kUsePusherCooldown && time >= (mActionStartTime + Preferences.kPusherTime + Preferences.kCooldownTime)) {
+				mInAction = false;
+				mArmAction = ArmAction.NONE;
+			} else if (time >= (mActionStartTime + Preferences.kPusherTime)){
+				mInAction = false;
+				mArmAction = ArmAction.NONE;
 			}
+		} else if(mArmAction == ArmAction.HAB_PICKUP) {
+			if(time >= (mActionStartTime+Preferences.kHabPickupDelay)) {
+				pickupUp();
+				mInAction = false;
+				mArmAction = ArmAction.NONE;
+			} 
 		}
 	}
 
@@ -126,14 +161,32 @@ public class Carriage extends Subsystem {
 
 	/* All Motor Controls */
 
-	
+	public void grabCargo() {
+		if(!mInAction) {
+			mInAction = true;
+			mActionStartTime = Timer.getFPGATimestamp();
+
+		}
+	}
+
+	public void setShootForward() {setRollerPower(1);}
+	public void setShootReverse() {setRollerPower(-1);}
+
+	public void setIntakeForward() {setRollerPower(Preferences.pControlPower);}
+	public void setIntakeReverse() {setRollerPower(-Preferences.pControlPower);}
+
+	public void stopRollers() {setRollerPower(0);}
+
+	private void setRollerPower(double power) {
+		mRollerWheels.set(ControlMode.PercentOutput, power);
+	}
 
 
 	@Override
 	public void outputTelemetry() {
 		SmartDashboard.putString("Pusher State", mHatchPusherState.name());
 		SmartDashboard.putString("Pickup State", mHatchPickupState.name());
-		SmartDashboard.putBoolean("In Launch Cycle", mInLaunchCycle);
+		//SmartDashboard.putBoolean("In Launch Cycle", mInLaunchCycle);
 	}
 
 	@Override

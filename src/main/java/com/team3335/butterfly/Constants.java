@@ -80,9 +80,6 @@ public class Constants {
 	public static final DriveModeState kDefaultSkidSteerDriveState = DriveModeState.TANK;
 
 	//Carriage
-	public static final double kPusherTime = 1.5;
-	public static final boolean kUsePusherCooldown = true;
-	public static final double kCooldownTime = 1.;
 	
 	//Vision
 	public static final int kPixelHeight = 240;
@@ -120,11 +117,11 @@ public class Constants {
 	public static final int kSlave1WinchCANId = -1; //TODO
 
 	//Carriage
-	public static final int kCarriageRollerWheelCANId = -1;	//TODO
+	public static final int kCarriageRollerWheelCANId = 23;
 
 	public static final int kCarriageModule = 1;
 	public static final int kHatchPusher = 2;
-	public static final int kHatchPickup = 6;
+	public static final int kHatchPickup = 3;
 	
 		//TODO Add dio for laser distance sensor from REV here
 

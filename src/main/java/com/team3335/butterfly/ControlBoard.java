@@ -90,6 +90,11 @@ public class ControlBoard implements IControlBoard{
 	}
 
 	@Override
+	public boolean getHabPickup() {
+		return mDriveControlBoard.getHabPickup();
+	}
+
+	@Override
 	public boolean getToggleDriveType() {
 		return mDriveControlBoard.getToggleDriveType();
 	}
