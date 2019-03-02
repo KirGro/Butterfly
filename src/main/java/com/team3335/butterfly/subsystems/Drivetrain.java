@@ -91,10 +91,10 @@ public class Drivetrain extends Subsystem{
 		mFrontRight.invertMotor(true);
 		mBackRight.invertMotor(true);
 
-		mFrontRight.setEncoderToOutputRatio(Constants.kGearRatio2);
-		mFrontLeft.setEncoderToOutputRatio(Constants.kGearRatio2);
-		mBackRight.setEncoderToOutputRatio(Constants.kGearRatio2);
-		mBackLeft.setEncoderToOutputRatio(Constants.kGearRatio2);
+		mFrontRight.setEncoderToOutputRatio(Constants.kDGearRatio2);
+		mFrontLeft.setEncoderToOutputRatio(Constants.kDGearRatio2);
+		mBackRight.setEncoderToOutputRatio(Constants.kDGearRatio2);
+		mBackLeft.setEncoderToOutputRatio(Constants.kDGearRatio2);
 
 		mFrontRight.configForPathFollowing(new TalonSRXPIDSetConfiguration());
 		mFrontLeft.configForPathFollowing(new TalonSRXPIDSetConfiguration());

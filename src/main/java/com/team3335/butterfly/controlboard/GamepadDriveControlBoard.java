@@ -74,4 +74,9 @@ public class GamepadDriveControlBoard implements IDriveControlBoard{
 	public boolean getHabPickup() {
 		return mJoystick.getRawButton(Constants.buttonNameToId.get("B"));
 	}
+
+	@Override
+	public double getElevator() {
+		return mJoystick.getRawAxis(Constants.axisNameToId.get("Right Trigger")) - mJoystick.getRawAxis(Constants.axisNameToId.get("Left Trigger"));
+	}
 }

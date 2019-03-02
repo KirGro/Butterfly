@@ -23,7 +23,7 @@ public class Preferences {
 	public static boolean kUsePusherCooldown = true;
 	public static double kCooldownTime = 1.;
 
-	public static double kHabPickupDelay = 1;
+	public static double kHabPickupDelay = .25;
 	
 
 	//Controller

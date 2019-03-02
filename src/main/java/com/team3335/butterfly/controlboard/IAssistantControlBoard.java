@@ -14,6 +14,10 @@ public interface IAssistantControlBoard {
 	public boolean getForceMecanum();
 	
 	public boolean getToggleBrake();
+
+	//public double getArm();
+	
+
 	
 	
 	public enum UnknownTruth {

@@ -108,6 +108,11 @@ public class ControlBoard implements IControlBoard{
 	public boolean getDriveButton2() {
 		return mDriveControlBoard.getDriveButton2();
 	}
+
+	@Override
+	public double getElevator() {
+		return mDriveControlBoard.getElevator();
+	}
 	
 	private double mapDeadband(double value) {
 		double deadband = (Constants.kUseGamepadForDriving ? Constants.kGamepadDeadband : Constants.kJoystickDeadband);

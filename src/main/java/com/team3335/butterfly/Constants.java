@@ -5,6 +5,11 @@ import java.util.HashMap;
 import com.team3335.butterfly.ControlBoard.*;
 import com.team3335.butterfly.states.DrivetrainState.DriveModeState;
 
+import edu.wpi.first.wpilibj.I2C;
+import edu.wpi.first.wpilibj.I2C.Port;
+
+
+//NOTE: ALL GEAR RATIOS ALREADY ACCOUNT FOR ANGULAR DIRECTION CHANGES WITH THE SIGN!!!!
 public class Constants {
 
     public static final double kLooperDt = 0.01;	//Honestly no clue what this is, used by team3335.butterfly.loops.Looper, I just copied from Cheesy Poofs. Potentially deals with loop timing?
@@ -46,18 +51,33 @@ public class Constants {
 	public static final boolean kUsingTalonSRXs = true;
 	public static final int kSRXEncoderCPR = 4096;
 
-	public static final double kGearRatio1 = -(14/56);	//From motor output to encoder shaft
-	public static final double kGearRatio2 = -(40/50);	//From encoder shaft to mecanum
-	public static final double kChainRatio1 = (12/24);	//From mecanum to high track
+	public static final double kDGearRatio1 = -(14/56);	//From motor output to encoder shaft
+	public static final double kDGearRatio2 = -(40/50);	//From encoder shaft to mecanum
+	public static final double kDChainRatio1 = (12/24);	//From mecanum to high track
 	
-	public static final double kMotorToMecanumRatio = kGearRatio1*kGearRatio2;
-	public static final double kMecanumToSkidSteerRatio = kChainRatio1;
+	public static final double kMotorToMecanumRatio = kDGearRatio1*kDGearRatio2;
+	public static final double kMecanumToSkidSteerRatio = kDChainRatio1;
 	public static final double kMotorToSkidSteerRatio = kMotorToMecanumRatio*kMecanumToSkidSteerRatio;
 
 	//Carriage
+	public static final double kCarriageMotorToOutputRatio = 10;
 
 	//Elevator
 	public static final double kElevatorMaxTravel = (kRobot == 2 ? 41 : 43); //In inches
+	public static final double kElevatorDrumDiameter = 1.125;
+
+	public static final double kEGearRatio1 = 1/5;
+	public static final double kEGearRatio2 = -(18/60);
+
+	public static final double kElevatorMotorToEncoderRatio = kEGearRatio1;
+	public static final double kElevatorEncoderToOutput = kEGearRatio2 * kEGearRatio2;
+
+	//RearIntake
+
+		// 775pro -> 9:1 -> encoder -> 7:1 -> 5:1 -> output
+	public static final double kRearMotorToEncoderRatio = 1/9;
+	public static final double kRearEncoderToOutputRatio = (1/7) * (1/5);
+
 	
 	
 	//Vision
@@ -113,8 +133,8 @@ public class Constants {
 	public static final int kShifterLeftSkidId = 1;
 
 	//Elevator
-	public static final int kMasterWinchCANId = -1; //TODO
-	public static final int kSlave1WinchCANId = -1; //TODO
+	public static final int kMasterWinchCANId = 21; //TODO
+	public static final int kSlave1WinchCANId = 22; //TODO
 
 	//Carriage
 	public static final int kCarriageRollerWheelCANId = 23;
@@ -126,9 +146,10 @@ public class Constants {
 		//TODO Add dio for laser distance sensor from REV here
 
 	//Rear Pickup 
-	public static final int kMasterArmCANId = -1; //TODO
-	public static final int kSlave1ArmCANd = -1; //TODO
-	public static final int kRearRollerWheelCANId = -1; //TODO
+	public static final int kMasterArmCANId = 31;
+	public static final int kSlave1ArmCANId = 32; 
+	public static final int kRearRollerWheelCANId = 33; 
+	public static final Port kRearCargoSensorPort = I2C.Port.kOnboard;
 
 		//TODO Add dio for laser distance sensor from REV here
 	

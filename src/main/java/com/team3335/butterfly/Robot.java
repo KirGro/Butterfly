@@ -29,7 +29,9 @@ public class Robot extends TimedRobot {
                     Drivetrain.getInstance(),
                     NavX.getInstance(),
                     Carriage.getInstance(),
-                    Limelight.getInstance()
+                    Limelight.getInstance(),
+                    Elevator.getInstance(),
+                    RearIntake.getInstance()
             )
     );
 
@@ -37,6 +39,8 @@ public class Robot extends TimedRobot {
     private NavX mNavX = NavX.getInstance();
     private Carriage mCarriage = Carriage.getInstance();
     private Limelight mLimelight = Limelight.getInstance();
+    private Elevator mElevator = Elevator.getInstance();
+    private RearIntake mRearIntake = RearIntake.getInstance();
     
     //Buttons
     private LatchedBoolean mToggleDriveType = new LatchedBoolean();
@@ -224,6 +228,12 @@ public class Robot extends TimedRobot {
         } else {
             mCarriage.stopRollers();
         }
+        if(Math.abs(mControlBoard.getElevator())>=.1) {
+            mElevator.driveRaw(mControlBoard.getElevator());
+        } else {
+            mElevator.driveRaw(0);
+        }
+        
 
         
     }

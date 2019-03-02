@@ -17,4 +17,6 @@ public interface IDriveControlBoard {
 
 	public boolean getHatchPusher();	//TODO Move to assistant controller
 	public boolean getHabPickup();
+
+	public double getElevator();
 }

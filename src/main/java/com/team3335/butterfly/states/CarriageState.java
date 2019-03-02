@@ -5,16 +5,20 @@ public class CarriageState {
     public boolean mPickupDown = false;
     public RollerWheelState mRollerState = RollerWheelState.OFF;
     public RollerAction mRollerAction = RollerAction.NONE;
-    public double mRollerSpeed;
+    public double mRollerSpeed = 0.0;;
 
+    //Planner doesn't touch
+    public boolean mHasCargo = false;
+    
 
+    /*
     public CarriageState(boolean pushersOut, boolean pickupDown, RollerWheelState rollerState, RollerAction rollerAction) {
         mPushersOut = pushersOut;
         mPickupDown = pickupDown;
         mRollerState = rollerState;
         mRollerAction = rollerAction;
     }
-    
+    */
 
     public enum RollerWheelState {
         OFF,
