@@ -57,18 +57,19 @@ public class Limelight extends Subsystem implements IVisionTarget{
 	private Limelight() {
 		//Set up table and game targets
 		table = NetworkTableInstance.getDefault();
-		mTargets[Target.HATCH.ordinal()] = new HatchTarget();
+		mTargets[Target.HATCH_TARGET.ordinal()] = new HatchTarget();
 
 		//Set default values
-		mTargetSelected = Target.HATCH;
+		mTargetSelected = Target.HATCH_TARGET;
 		mLightMode = LightMode.DEFAULT;
 		mCameraMode = CameraMode.VISION;
 		mStreamMode = StreamMode.SECONDARY;
 	}
 
 	public enum Target {
-		HATCH,
-		BALL;
+		HATCH_TARGET,
+		CARGO_TARGET,
+		CARGO;
 		
 		protected static Target[] targets = Target.values();
 		public Target next() {

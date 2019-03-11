@@ -9,8 +9,7 @@ import com.team3335.butterfly.loops.ILooper;
 import com.team3335.butterfly.loops.Loop;
 import com.team3335.butterfly.states.CarriageState;
 import com.team3335.butterfly.states.CarriageState.ArmAction;
-import com.team3335.butterfly.states.CarriageState.RollerAction;
-import com.team3335.butterfly.states.CarriageState.RollerWheelState;
+import com.team3335.butterfly.states.RearIntakeState.RollerAction;
 import com.team3335.butterfly.subsystems.Subsystem;
 import com.team3335.lib.util.ChoosableSolenoid;
 import com.team3335.lib.util.ChoosableSolenoid.SolenoidState;
@@ -25,9 +24,8 @@ public class Carriage extends Subsystem {
 	private SolenoidState mHatchPusherState, mHatchPickupState;
 	//private double mLastLaunchTime;
 	//private boolean mInLaunchCycle;
-
+	private boolean mClosedLoop;
 	private VictorSPX mRollerWheels;
-	private RollerWheelState mRollerWheelState;
 	private RollerAction mRollerAction;
 	private ArmAction mArmAction;
 	private boolean mInAction;
@@ -48,8 +46,12 @@ public class Carriage extends Subsystem {
         @Override
         public void onLoop(double timestamp) {
             synchronized (Carriage.this) {
-				checkPusherCycleStatus(timestamp);
-				updateSolenoids();
+				if(mClosedLoop) {
+
+				} else {
+					checkPusherCycleStatus(timestamp);
+					updateSolenoids();
+				}
             }
         }
 
@@ -84,13 +86,18 @@ public class Carriage extends Subsystem {
 		mRollerWheels.setInverted(true);
 		stopRollers();
 		mRollerAction = RollerAction.NONE;
-		mRollerWheelState = RollerWheelState.OFF;
 		mArmAction = ArmAction.NONE;
 		mActionStartTime = -1;
 		mInAction = false;
 
+		mClosedLoop = false; //TODO Change
+
 
 	}
+	
+    public CarriageState getCurrentCarriageState() {
+        return mCurrentState;
+    }
 
 	/* All Solenoid Controls */
 
@@ -99,7 +106,7 @@ public class Carriage extends Subsystem {
 			mInAction = true;
 			mArmAction = ArmAction.CARGOSHIP_PLACING;
 			mActionStartTime = Timer.getFPGATimestamp();
-			pickupUp();
+			pickupDown();
 			pusherOut();
 		}
 	}
@@ -116,6 +123,9 @@ public class Carriage extends Subsystem {
 
 	private void checkPusherCycleStatus(double time) {
 		if(mArmAction == ArmAction.CARGOSHIP_PLACING) {
+			if(time >= (mActionStartTime + .75)) {
+				pickupDown();
+			}
 			if(time >= (mActionStartTime + Preferences.kPusherTime)) {
 				pusherIn();
 			}

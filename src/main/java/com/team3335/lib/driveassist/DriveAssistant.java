@@ -54,7 +54,7 @@ public class DriveAssistant{
             case AUTO_SWITCHING:
                 if(db1) asTarget.prev();
                 if(db2) asTarget.next();
-                mLimelight.setPipeline(Target.HATCH);
+                mLimelight.setPipeline(Target.HATCH_TARGET);
                 if(mLimelight.hasTarget() && mLimelight.getDistance()<24) asModeState = DriveModeState.MECANUM_ROBOT_RELATIVE;
                 else asModeState = DriveModeState.MECANUM_FIELD_RELATIVE;
                 break;

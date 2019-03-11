@@ -1,9 +1,14 @@
 package com.team3335.butterfly;
 
+import com.team3335.butterfly.planners.SuperstructureMotionPlanner.Targeting;
 import com.team3335.butterfly.states.DrivetrainState.*;
 import com.team3335.butterfly.subsystems.Limelight.Target;
 
 public class Preferences {
+	//Planning
+	public static Targeting pDefaultTargeting = Targeting.HATCH;
+	public static boolean pDefaultPlacingLow = true;
+	
 	//Drivetrain
 	public static DrivetrainWheelState pDefaultDrivetrainWheelState = DrivetrainWheelState.MECANUM;
 	public static DriveModeState pMecanumDefaultMode = DriveModeState.MECANUM_ROBOT_RELATIVE;
@@ -23,7 +28,14 @@ public class Preferences {
 	public static boolean kUsePusherCooldown = true;
 	public static double kCooldownTime = 1.;
 
-	public static double kHabPickupDelay = .25;
+	public static double kHabPickupDelay = 1;
+
+	//Rear Intake
+	public static double kCargoPickupAngle = 70; //TODO test cargo pickup angle
+	public static double kClimbingAngle = 80; //TODO figure out climbing angle
+
+	// Weird but rollers
+	public static double kRollerIntakePercent = .3;
 	
 
 	//Controller
@@ -32,7 +44,7 @@ public class Preferences {
 
 	//Vision
 	public static double pMecanumSidewaysScalar = 1.5;
-	public static Target pDefaultTarget = Target.HATCH;
+	public static Target pDefaultTarget = Target.HATCH_TARGET;
 
 }
 

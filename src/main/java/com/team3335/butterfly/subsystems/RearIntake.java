@@ -13,7 +13,7 @@ import com.team3335.butterfly.Preferences;
 import com.team3335.butterfly.loops.ILooper;
 import com.team3335.butterfly.loops.Loop;
 import com.team3335.butterfly.statemachines.RearIntakeStateMachine;
-import com.team3335.butterfly.statemachines.RearIntakeStateMachine.WantedAction;
+import com.team3335.butterfly.statemachines.RearIntakeStateMachine.*;
 import com.team3335.butterfly.states.RearIntakeState;
 import com.team3335.butterfly.subsystems.Subsystem;
 
@@ -26,7 +26,6 @@ public class RearIntake extends Subsystem {
     
     private RearIntakeStateMachine mRearIntakeStateMachine = new RearIntakeStateMachine();
     private RearIntakeState mCurrentState = new RearIntakeState();
-    private WantedAction mWantedAction = WantedAction.PLANNED;
 
 	private TalonSRX mArmMaster;
     private VictorSPX mArmSlave1;
@@ -37,7 +36,8 @@ public class RearIntake extends Subsystem {
 
 	private PeriodicIO mPeriodicIO = new PeriodicIO();
 
-	private boolean mClosedLoop;
+    private boolean mClosedLoop;
+    private WantedAction mWantedAction;
 	
 	private final Loop mLoop = new Loop() {
         @Override
@@ -87,22 +87,24 @@ public class RearIntake extends Subsystem {
         
         mArmMaster.configSelectedFeedbackSensor(FeedbackDevice.CTRE_MagEncoder_Relative, 0, 100);
         mArmMaster.configForwardLimitSwitchSource(LimitSwitchSource.FeedbackConnector, LimitSwitchNormal.NormallyOpen);
+        
+        mArmMaster.configForwardSoftLimitEnable(true);
+        mArmMaster.configForwardSoftLimitThreshold((int) (Constants.kSRXEncoderCPR / Constants.kRearEncoderToOutputRatio * Constants.kRearMaxAngle / 360));
+        mArmMaster.configReverseSoftLimitEnable(true);
+        mArmMaster.configReverseSoftLimitThreshold((int) (Constants.kSRXEncoderCPR / Constants.kRearEncoderToOutputRatio * Constants.kRearMinAngle / 360));
 		
-		mClosedLoop = true;
+        mClosedLoop = false; //TODO CHANGE
+
+        mWantedAction = WantedAction.DISABLE;
     }
     
     public RearIntakeState getCurrentRearIntakeState() {
-        mCurrentState.mArmEncoderPosition = mPeriodicIO.encoderPosition;
-        mCurrentState.mArmEncoderSetpoint = mPeriodicIO.encoderTarget;
-        mCurrentState.mArmPercent = mPeriodicIO.armPercentOutput;
-        mCurrentState.mRollerPercent = mPeriodicIO.rollerPercentOutput;
-        mCurrentState.mLaserBroken = mPeriodicIO.laserBroken;
         return mCurrentState;
     }
 
     public void updateComponentsFromState(RearIntakeState newState) {
-        if(mWantedAction == WantedAction.PLANNED) {
-
+        if(mClosedLoop) {
+            //TODO
         }
     }
 
@@ -173,6 +175,13 @@ public class RearIntake extends Subsystem {
         ByteBuffer buffer = ByteBuffer.wrap(temp); //turns the byte value into a double
         mPeriodicIO.laserDistance = buffer.getDouble();
         mPeriodicIO.laserBroken = mPeriodicIO.laserDistance < 13;
+
+        //set current state
+        mCurrentState.mRearArmEncoderPosition = mPeriodicIO.encoderPosition;
+        mCurrentState.mRearArmEncoderSetpoint = mPeriodicIO.encoderTarget;
+        mCurrentState.mRearArmPercent = mPeriodicIO.armPercentOutput;
+        mCurrentState.mRearRollerPercent = mPeriodicIO.rollerPercentOutput;
+        mCurrentState.mRearLaserBroken = mPeriodicIO.laserBroken;
 	}
 
 	public static class PeriodicIO {
@@ -183,7 +192,7 @@ public class RearIntake extends Subsystem {
 
 		//Outputs
 		public int encoderTarget;
-        public double armPercentOutput;
-        public double rollerPercentOutput;
+        public double armPercentOutput = 0;
+        public double rollerPercentOutput = 0;
 	}
 }

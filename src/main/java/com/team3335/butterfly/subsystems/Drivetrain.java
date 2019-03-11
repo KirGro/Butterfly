@@ -221,7 +221,6 @@ public class Drivetrain extends Subsystem{
 
 	@Override
 	public boolean checkSystem() {
-		// TODO Auto-generated method stub
 		return false;
 	}
 
@@ -254,7 +253,6 @@ public class Drivetrain extends Subsystem{
 
 	@Override
 	public void stop() {
-		// TODO Auto-generated method stub
 		
 	}
 	

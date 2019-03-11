@@ -133,4 +133,24 @@ public class ControlBoard implements IControlBoard{
 		ATTACK3,
 		PRO_3D
 	}
+
+	@Override
+	public boolean getHabPickupHeight() {
+		return mDriveControlBoard.getHabPickupHeight();
+	}
+
+	@Override
+	public boolean getHatchLowHeight() {
+		return mDriveControlBoard.getHatchLowHeight();
+	}
+
+	@Override
+	public boolean getHatchMiddleHeight() {
+		return mDriveControlBoard.getHatchMiddleHeight();
+	}
+
+	@Override
+	public boolean getSwitchElevatorMode() {
+		return mDriveControlBoard.getSwitchElevatorMode();
+	}
 }

@@ -1,14 +1,28 @@
 package com.team3335.butterfly.states;
 
+import com.team3335.butterfly.states.RearIntakeState.RollerAction;
+
 public class CarriageState {
+    //Planner controls
     public boolean mPushersOut = false;
     public boolean mPickupDown = false;
-    public RollerWheelState mRollerState = RollerWheelState.OFF;
     public RollerAction mRollerAction = RollerAction.NONE;
-    public double mRollerSpeed = 0.0;;
+
+    //Only used for manual control
+    public double mRollerSpeed = 0.0;
 
     //Planner doesn't touch
-    public boolean mHasCargo = false;
+    public boolean mLaserBroken = false;
+    public boolean mHatchTriggered = false;
+
+    
+    public boolean hasCargo() {
+        return mLaserBroken;
+    }
+
+    public boolean hasHatch() {
+        return mHatchTriggered;
+    }
     
 
     /*
@@ -19,26 +33,6 @@ public class CarriageState {
         mRollerAction = rollerAction;
     }
     */
-
-    public enum RollerWheelState {
-        OFF,
-        INTAKE_FORWARD,
-        INTAKE_REVERSE,
-        FULL_FORWARD,
-        FULL_REVERSE;
-
-		private static RollerWheelState[] vals = values();
-    }
-
-    public enum RollerAction {
-        NONE,
-        CUSTOM,
-        WAITING_FOR_CARGO,
-        HOLDING_CARGO,
-        SHOOTING;
-
-		private static RollerAction[] vals = values();
-    }
 
     public enum ArmAction {
         NONE,

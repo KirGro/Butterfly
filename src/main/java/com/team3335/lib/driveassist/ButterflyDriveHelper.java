@@ -156,7 +156,6 @@ public class ButterflyDriveHelper {
 		}
 		
 		if(driveWheelState == DrivetrainWheelState.MECANUM) {
-			//TODO Test
 			oldDriveIntent = new DriveIntent(forwardRight, forwardLeft, forwardRight, forwardLeft, driveMode, brake);
 		} else {
 			oldDriveIntent = new DriveIntent(forwardRight, forwardLeft, forwardRight, forwardLeft, driveMode, brake);
@@ -172,7 +171,6 @@ public class ButterflyDriveHelper {
 	private DriveIntent arcade(double f, double r, DriveModeState driveMode, DrivetrainWheelState driveWheelState, boolean brake, boolean visionDriving) {
 		double forward = map(f), turn = map(r);
 		if(driveWheelState == DrivetrainWheelState.MECANUM) {
-			//TODO Test
 			double fr = forward+turn;
 			double fl = forward-turn;
 			double largest = Math.abs(fl)>Math.abs(fr) ? Math.abs(fl): Math.abs(fr);

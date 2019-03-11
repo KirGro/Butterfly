@@ -30,8 +30,8 @@ public class Robot extends TimedRobot {
                     NavX.getInstance(),
                     Carriage.getInstance(),
                     Limelight.getInstance(),
-                    Elevator.getInstance(),
-                    RearIntake.getInstance()
+                    Elevator.getInstance()
+                    //RearIntake.getInstance()
             )
     );
 
@@ -40,7 +40,7 @@ public class Robot extends TimedRobot {
     private Carriage mCarriage = Carriage.getInstance();
     private Limelight mLimelight = Limelight.getInstance();
     private Elevator mElevator = Elevator.getInstance();
-    private RearIntake mRearIntake = RearIntake.getInstance();
+    //private RearIntake mRearIntake = RearIntake.getInstance();
     
     //Buttons
     private LatchedBoolean mToggleDriveType = new LatchedBoolean();
@@ -48,6 +48,10 @@ public class Robot extends TimedRobot {
     private LatchedBoolean mDriveButton2 = new LatchedBoolean();
     private LatchedBoolean mFireHatch = new LatchedBoolean();
     private LatchedBoolean mHabPickup = new LatchedBoolean();
+    private LatchedBoolean mHabPickupHeight = new LatchedBoolean();
+    private LatchedBoolean mHatchLowHeight = new LatchedBoolean();
+    private LatchedBoolean mHatchMiddleHeight = new LatchedBoolean();
+    private LatchedBoolean mSwitchElevatorMode = new LatchedBoolean();
     
     /* STORAGE */
 
@@ -98,8 +102,10 @@ public class Robot extends TimedRobot {
     public void teleopInit() {
         SmartDashboard.putString("Match Cycle", "TELEOP");
         mDrivetrain.zeroSensors();
+        mElevator.zeroSensors();
         mDisabledLooper.stop();
         mEnabledLooper.start();
+        mElevator.setEncoderTargetHeight(0);
     }
 
     @Override
@@ -140,6 +146,10 @@ public class Robot extends TimedRobot {
         
         boolean fireHatch = mFireHatch.update(mControlBoard.getHatchPusher());
         boolean habPickup = mHabPickup.update(mControlBoard.getHabPickup());
+        
+        boolean habPickupHeight = mHabPickupHeight.update(mControlBoard.getHabPickupHeight());
+        boolean hatchLowHeight = mHatchLowHeight.update(mControlBoard.getHatchLowHeight());
+        boolean hatchMiddleHeight = mHatchMiddleHeight.update(mControlBoard.getHatchMiddleHeight());
 
         if(toggleDriveType) type = type.next();
         SmartDashboard.putString("Type", type.toString());
@@ -165,7 +175,7 @@ public class Robot extends TimedRobot {
             case AUTO_SWITCHING:
                 if(db1) asTarget.prev();
                 if(db2) asTarget.next();
-                mLimelight.setPipeline(Target.HATCH);
+                mLimelight.setPipeline(Target.HATCH_TARGET);
                 if(mLimelight.hasTarget() && mLimelight.getDistance()<24) asModeState = DriveModeState.MECANUM_ROBOT_RELATIVE;
                 else asModeState = DriveModeState.MECANUM_FIELD_RELATIVE;
                 break;
@@ -221,18 +231,32 @@ public class Robot extends TimedRobot {
             mCarriage.placeHatchCargoship();
         } else if(habPickup) {
             mCarriage.habPickup();
+            mElevator.setEncoderTargetHeight(4);
         }
 
         if(mControlBoard.getUseAssist()) {
             mCarriage.setShootForward();
         } else {
             mCarriage.stopRollers();
+        } 
+        boolean switchEM = mSwitchElevatorMode.update(mControlBoard.getSwitchElevatorMode());
+        if(switchEM) {
+            mElevator.mClosedLoop = !mElevator.mClosedLoop;
         }
         if(Math.abs(mControlBoard.getElevator())>=.1) {
             mElevator.driveRaw(mControlBoard.getElevator());
         } else {
             mElevator.driveRaw(0);
         }
+        
+        if(mControlBoard.getHabPickupHeight()) {
+            mElevator.setHeightRobot(2);
+        } else if(mControlBoard.getHatchLowHeight()) {
+            mElevator.setEncoderTargetHeight(0);
+        } else if(mControlBoard.getHatchMiddleHeight()) {
+            mElevator.setEncoderTargetHeight(5);
+        }
+
         
 
         

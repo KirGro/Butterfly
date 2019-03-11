@@ -24,15 +24,16 @@ public class Constants {
 	public static final double kFloorToMiddleCargo = 55.5;
 	public static final double kFloorToHighCargo = 83.5;
 	
-	public static final double kFloorToBottomCargoShip = 31.5;
-	public static final double kFloorToTopCargoShip = 31.5;
+	public static final double kFloorToBottomShipCargo = 31.5;
+	public static final double kFloorToTopShipCargo = 48;
+	public static final double kFloorToShipCargo = (kFloorToTopShipCargo + kFloorToBottomShipCargo) / 2;
 
     //Hatch
     public static final double kHatchTargetWidth = 14.5;
     public static final double kHatchTargetHeight = 5.75;
 	public static final double kHatchTargetBottomToHatchCenter = 6.5;
 	public static final double kFloorToLowHatchCenter = 19;
-	public static final double kFloorToLMiddleHatchCenter = 47;
+	public static final double kFloorToMiddleHatchCenter = 47;
 	public static final double kFloorToHighHatchCenter = 75;
     
     
@@ -60,30 +61,42 @@ public class Constants {
 	public static final double kMotorToSkidSteerRatio = kMotorToMecanumRatio*kMecanumToSkidSteerRatio;
 
 	//Carriage
-	public static final double kCarriageMotorToOutputRatio = 10;
+	public static final double kCarriageMotorToOutputRatio = .1;
 
 	//Elevator
-	public static final double kElevatorMaxTravel = (kRobot == 2 ? 41 : 43); //In inches
-	public static final double kElevatorDrumDiameter = 1.125;
+	public static final double kElevatorRelativeMaxHeight = (kRobot == 2 ? 28 : 43); //In inches, Must be >0, relative to talon tach
+	public static final double kElevatorRelativeMinHeight = (kRobot == 2 ? 0 : 0); //In inches, Must be <=0, relative to talon tach
+	public static final double kElevatorMinHeight = 19;
+	public static final double kElevatorMaxHeight = kElevatorMinHeight + kElevatorRelativeMaxHeight - kElevatorMinHeight;
+
+	public static final double kElevatorDrumDiameter = 1.2;
+	public static final double kElevatorScalarFactor = 1.1342376464;
 
 	public static final double kEGearRatio1 = 1/5;
-	public static final double kEGearRatio2 = -(18/60);
+	public static final double kEGearRatio2 = -0.3;
 
 	public static final double kElevatorMotorToEncoderRatio = kEGearRatio1;
-	public static final double kElevatorEncoderToOutput = kEGearRatio2 * kEGearRatio2;
+	public static final double kElevatorEncoderToOutput = kEGearRatio2 * kEGearRatio2; //Cannot init this way appearently?
+	
+	public static final double kElevatorReachOffset = 1.5;
+	public static final double kElevatorCargoPassHeight = 1;
+
+	public static final int kElevatorTicksPerInch = (int) Math.round(Constants.kSRXEncoderCPR / (Constants.kElevatorScalarFactor * Constants.kElevatorDrumDiameter * Math.PI * Constants.kEGearRatio2 * Constants.kEGearRatio2));
 
 	//RearIntake
 
 		// 775pro -> 9:1 -> encoder -> 7:1 -> 5:1 -> output
 	public static final double kRearMotorToEncoderRatio = 1/9;
 	public static final double kRearEncoderToOutputRatio = (1/7) * (1/5);
+	public static final double kRearMaxAngle = 90; // Degrees
+	public static final double kRearMinAngle = 0;
 
 	
 	
 	//Vision
-	public static final double kCameraHeight = (kRobot == 2 ? 37 + 1/16:36); //TODO Correct
-	public static final double kCameraAngle = (kRobot == 2 ? -13 : -18); 	//TODO Correct
-	public static final double kCameraDistanceFromFront = (kRobot == 2 ? 15 + 5/8 : 12); //TODO Correct
+	public static final double kCameraHeight = (kRobot == 2 ? 36 + 10/16 : 36);
+	public static final double kCameraAngle = (kRobot == 2 ? -15 : -18);
+	public static final double kCameraDistanceFromFront = (kRobot == 2 ? 17 + 6/8 : 12);
 
 	
 	/* SOFTWARE CONSTANTS / PREFERENCES */
@@ -133,8 +146,8 @@ public class Constants {
 	public static final int kShifterLeftSkidId = 1;
 
 	//Elevator
-	public static final int kMasterWinchCANId = 21; //TODO
-	public static final int kSlave1WinchCANId = 22; //TODO
+	public static final int kMasterWinchCANId = 21;
+	public static final int kSlave1WinchCANId = 22;
 
 	//Carriage
 	public static final int kCarriageRollerWheelCANId = 23;
@@ -142,16 +155,13 @@ public class Constants {
 	public static final int kCarriageModule = 1;
 	public static final int kHatchPusher = 2;
 	public static final int kHatchPickup = 3;
-	
-		//TODO Add dio for laser distance sensor from REV here
+	public static final Port kCarriageCargoSensorPort = I2C.Port.kMXP; //TODO Is this correct?
 
 	//Rear Pickup 
 	public static final int kMasterArmCANId = 31;
 	public static final int kSlave1ArmCANId = 32; 
 	public static final int kRearRollerWheelCANId = 33; 
 	public static final Port kRearCargoSensorPort = I2C.Port.kOnboard;
-
-		//TODO Add dio for laser distance sensor from REV here
 	
 	//Controllers - Use -1 for unused controllers
 	public static final GamepadControlBoardType kGamepadType = GamepadControlBoardType.XBOX;
