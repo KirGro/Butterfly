@@ -1,6 +1,6 @@
 package com.team3335.butterfly;
 
-import com.team3335.butterfly.planners.SuperstructureMotionPlanner.Targeting;
+import com.team3335.butterfly.Robot.Targeting;
 import com.team3335.butterfly.states.DrivetrainState.*;
 import com.team3335.butterfly.subsystems.Limelight.Target;
 

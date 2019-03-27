@@ -4,8 +4,10 @@ import com.team3335.butterfly.loops.*;
 import com.team3335.butterfly.statemachines.SuperstructureStateMachine;
 import com.team3335.butterfly.states.SuperstructureCommand;
 import com.team3335.butterfly.states.SuperstructureState;
+import com.team3335.butterfly.states.SuperstructureState.Goal;
 
 public class Superstructure extends Subsystem{
+    private Goal mGoal = Goal.GAME_PEICE_OR_CLIMB;
     static Superstructure mInstance = null;
     private SuperstructureState mState = new SuperstructureState();
     private Elevator mElevator = Elevator.getInstance();
@@ -15,12 +17,67 @@ public class Superstructure extends Subsystem{
     private SuperstructureStateMachine.WantedAction mWantedAction =
             SuperstructureStateMachine.WantedAction.IDLE;
     
-    
     public synchronized static Superstructure getInstance() {
         if (mInstance == null) {
             mInstance = new Superstructure();
         }
         return mInstance;
+    }
+
+    public synchronized void setOpenLoopElevatorPercent(double power) {
+        mStateMachine.setOpenLoopElevatorPercent(power);
+    }
+    
+    public synchronized void setOpenLoopRearPercent(double power) {
+        mStateMachine.setOpenLoopRearPercent(power);
+    }
+
+    public synchronized void setScoringHeight(double inches) {
+        mStateMachine.setScoringHeight(inches);
+    }
+
+    public synchronized double getScoringHeight() {
+        return mStateMachine.getScoringHeight();
+    }
+
+    public synchronized void setScoringRearAngle(double angle) {
+        mStateMachine.setScoringRearAngle(angle);
+    }
+
+    public synchronized double getScoringRearAngle() {
+        return mStateMachine.getScoringRearAngle();
+    }
+    
+    public synchronized void setScoringCarriageRollerPercent(double percent) {
+        mStateMachine.setScoringRearRollerPercent(percent);
+    }
+
+    public synchronized double getScoringCarriageRollerPercent() {
+        return mStateMachine.getScoringCarriageRollerPercent();
+    }
+    
+    public synchronized void setScoringRearRollerPercent(double percent) {
+        mStateMachine.setScoringRearRollerPercent(percent);
+    }
+
+    public synchronized double getScoringRearRollerPercent() {
+        return mStateMachine.getScoringRearRollerPercent();
+    }
+    
+    public synchronized void setScoringArmsDown(boolean armsDown) {
+        mStateMachine.setScoringArmsDown(armsDown);
+    }
+
+    public synchronized boolean getScoringArmsDown() {
+        return mStateMachine.getScoringArmsDown();
+    }
+    
+    public synchronized void setScoringPushersOut(boolean pushersOut) {
+        mStateMachine.setScoringPushersOut(pushersOut);
+    }
+
+    public synchronized boolean getScoringPushersOut() {
+        return mStateMachine.getScoringPushersOut();
     }
 
     @Override
@@ -51,16 +108,38 @@ public class Superstructure extends Subsystem{
         return mState;
     }
 
-    private synchronized void updateObservedState(SuperstructureState state) {
-        state.height = mElevator.getInchesOffGround();
-        state.angle = mWrist.getAngle();
-        state.jawClamped = mIntake.getJawState() == IntakeState.JawState.CLAMPED;
-
-        state.elevatorSentLastTrajectory = mElevator.hasFinishedTrajectory();
-        state.wristSentLastTrajectory = mWrist.hasFinishedTrajectory();
+    public synchronized void setGoal(Goal goal) {
+        mGoal = goal;
     }
 
-    synchronized void setFromCommandState(SuperstructureCommand commandState) {
+    private synchronized void updateObservedState(SuperstructureState state) {
+        state.goal = mGoal;
+        state.height = mElevator.getInchesOffGround();
+
+        state.carriageRollerPercent = mCarriage.getRollerPercent();
+        state.armsDown = mCarriage.getArmsDown();
+        state.pushersOut = mCarriage.getPushersOut();
+
+        state.rearAngle = mRearIntake.getAngle();
+        state.rearRollerPercent = mRearIntake.getRollerPercent();
+
+        state.elevatorSentLastTrajectory = mElevator.hasFinishedTrajectory();
+        state.rearIntakeSentLastTrajectory = mRearIntake.hasFinishedTrajectory();
+
+        state.hasRearCargo = mRearIntake.hasCargo();
+        state.hasCarriageCargo = mCarriage.hasCargo();
+        state.hasHatch = mCarriage.hasHatch();
+    }
+
+    public synchronized void setFromCommandState(SuperstructureCommand commandState) {
+        mElevator.setMotionMagicPosition(commandState.height);
+        
+        mCarriage.setRollerPower(commandState.carriageRollerPercent);
+        mCarriage.setArms(commandState.armsDown);
+        mCarriage.setPusher(commandState.pushersOut);
+
+        mRearIntake.setMotionMagicPosition(commandState.angle);
+        mRearIntake.setRollerPower(commandState.rearRollerPercent);
     }
 
     @Override
@@ -78,17 +157,10 @@ public class Superstructure extends Subsystem{
                 synchronized (Superstructure.this) {
                     updateObservedState(mState);
 
-                    if (!isKickStandEngaged()) {
-                        // Kickstand is fired, so not engaged.
-                        mStateMachine.setMaxHeight(SuperstructureConstants.kElevatorMaxHeight);
-                    } else {
-                        mStateMachine.setMaxHeight(SuperstructureConstants.kElevatorMaxHeightKickEngaged);
-                    }
+                    //mIntake.setKickStand(isKickStandEngaged());
 
-                    mIntake.setKickStand(isKickStandEngaged());
-
-                    mCommand = mStateMachine.update(timestamp, mWantedAction, mState);
-                    setFromCommandState(mCommand);
+                    //mCommand = mStateMachine.update(timestamp, mWantedAction, mState);
+                    //setFromCommandState(mCommand);
                 }
             }
 

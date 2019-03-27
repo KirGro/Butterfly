@@ -7,15 +7,17 @@ import com.ctre.phoenix.motorcontrol.LimitSwitchSource;
 import com.ctre.phoenix.motorcontrol.SensorCollection;
 import com.ctre.phoenix.motorcontrol.can.TalonSRX;
 import com.ctre.phoenix.motorcontrol.can.VictorSPX;
+import com.revrobotics.Rev2mDistanceSensor;
+import com.revrobotics.Rev2mDistanceSensor.RangeProfile;
+
 import java.nio.ByteBuffer;
 import com.team3335.butterfly.Constants;
 import com.team3335.butterfly.Preferences;
 import com.team3335.butterfly.loops.ILooper;
 import com.team3335.butterfly.loops.Loop;
-import com.team3335.butterfly.statemachines.RearIntakeStateMachine;
-import com.team3335.butterfly.statemachines.RearIntakeStateMachine.*;
-import com.team3335.butterfly.states.RearIntakeState;
 import com.team3335.butterfly.subsystems.Subsystem;
+import com.team3335.lib.util.LatchedBoolean;
+import com.team3335.lib.util.Util;
 
 import edu.wpi.first.wpilibj.I2C;
 import edu.wpi.first.wpilibj.Timer;
@@ -23,21 +25,22 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
 public class RearIntake extends Subsystem {
     private static RearIntake mInstance = new RearIntake();
-    
-    private RearIntakeStateMachine mRearIntakeStateMachine = new RearIntakeStateMachine();
-    private RearIntakeState mCurrentState = new RearIntakeState();
 
 	private TalonSRX mArmMaster;
     private VictorSPX mArmSlave1;
     private VictorSPX mRollerWheels;
 
     private SensorCollection mTalonSensors;
-    private I2C mRearCargoSensor;
+	private Rev2mDistanceSensor cargoSensor;
 
-	private PeriodicIO mPeriodicIO = new PeriodicIO();
+    private PeriodicIO mPeriodicIO = new PeriodicIO();
+    
+	private boolean mZeroingSensors = false;
+	private double mLastSeenArm = Double.NaN;
+	private LatchedBoolean mJustCaughtArm = new LatchedBoolean();
+	private boolean hasBeenZeroed = false;
 
-    private boolean mClosedLoop;
-    private WantedAction mWantedAction;
+    private RearIntakeControlState mRearIntakeControlState = RearIntakeControlState.OPEN_LOOP;
 	
 	private final Loop mLoop = new Loop() {
         @Override
@@ -49,7 +52,7 @@ public class RearIntake extends Subsystem {
         @Override
         public void onLoop(double timestamp) {
             synchronized (RearIntake.this) {
-                RearIntakeState newState = mRearIntakeStateMachine.update(Timer.getFPGATimestamp(), mWantedAction, getCurrentRearIntakeState());
+                //RearIntakeState newState = mRearIntakeStateMachine.update(Timer.getFPGATimestamp(), mWantedAction, getCurrentRearIntakeState());
             }
         }
 
@@ -74,7 +77,10 @@ public class RearIntake extends Subsystem {
         mRollerWheels = new VictorSPX(Constants.kRearRollerWheelCANId);
 
         mTalonSensors = mArmMaster.getSensorCollection();
-        mRearCargoSensor = new I2C(Constants.kRearCargoSensorPort, 0x52);
+		cargoSensor = new Rev2mDistanceSensor(Constants.kRearCargoSensorPort);
+		cargoSensor.setAutomaticMode(true);
+		cargoSensor.setEnabled(true);
+		cargoSensor.setRangeProfile(RangeProfile.kHighSpeed);
 		//Set robot intial settings
         mArmSlave1.follow(mArmMaster);
         mArmSlave1.setInverted(true);
@@ -88,51 +94,70 @@ public class RearIntake extends Subsystem {
         mArmMaster.configSelectedFeedbackSensor(FeedbackDevice.CTRE_MagEncoder_Relative, 0, 100);
         mArmMaster.configForwardLimitSwitchSource(LimitSwitchSource.FeedbackConnector, LimitSwitchNormal.NormallyOpen);
         
+        mArmMaster.configForwardLimitSwitchSource(LimitSwitchSource.Deactivated, LimitSwitchNormal.Disabled);
+
         mArmMaster.configForwardSoftLimitEnable(true);
         mArmMaster.configForwardSoftLimitThreshold((int) (Constants.kSRXEncoderCPR / Constants.kRearEncoderToOutputRatio * Constants.kRearMaxAngle / 360));
         mArmMaster.configReverseSoftLimitEnable(true);
         mArmMaster.configReverseSoftLimitThreshold((int) (Constants.kSRXEncoderCPR / Constants.kRearEncoderToOutputRatio * Constants.kRearMinAngle / 360));
 		
-        mClosedLoop = false; //TODO CHANGE
+        mRearIntakeControlState = RearIntakeControlState.POSITION_PID; //TODO CHANGE
 
-        mWantedAction = WantedAction.DISABLE;
-    }
-    
-    public RearIntakeState getCurrentRearIntakeState() {
-        return mCurrentState;
-    }
-
-    public void updateComponentsFromState(RearIntakeState newState) {
-        if(mClosedLoop) {
-            //TODO
-        }
     }
 
 	/* All Motor Controls */
+    public synchronized void setOpenLoop(double percentage) {
+        if(mRearIntakeControlState != RearIntakeControlState.OPEN_LOOP) {
+            mRearIntakeControlState = RearIntakeControlState.OPEN_LOOP;
+        }
+        mPeriodicIO.armPercentOutput = percentage;
+    }
 
-	public void driveRaw(double percent) {
-		mPeriodicIO.armPercentOutput = percent/5;
+    public synchronized void setMotionMagicPosition(double angle) {
+        int encoderPosition = (int) Math.round(angle / Constants.kRearEncoderToOutputRatio);
+        if(mRearIntakeControlState != RearIntakeControlState.MOTION_MAGIC) {
+			mRearIntakeControlState = RearIntakeControlState.MOTION_MAGIC;
+		}
+		mPeriodicIO.encoderTarget = encoderPosition;
+    }
+
+    public synchronized void setPositionPID(double angle) {
+        int encoderPosition = (int) Math.round(angle / Constants.kRearEncoderToOutputRatio);
+        if (mRearIntakeControlState != RearIntakeControlState.POSITION_PID) {
+            mRearIntakeControlState = RearIntakeControlState.POSITION_PID;
+        }
+        mPeriodicIO.encoderTarget = encoderPosition;
+    }
+
+    
+	public void setRollerPower(double power) {
+		mPeriodicIO.rollerPercentOutput = power;
 	}
 
+    //Sensor returns
 
-	public void setEncoderTarget(int position) {
-		mPeriodicIO.encoderTarget = position;
-	} 
+    public double getAngle() {
+        return mPeriodicIO.encoderPosition * Constants.kRearEncoderToOutputRatio;
+    }
+
+    public double getRollerPercent() {
+        return mPeriodicIO.rollerPercentOutput;
+    }
+    
+    public synchronized boolean hasFinishedTrajectory() {
+        return mRearIntakeControlState == RearIntakeControlState.MOTION_MAGIC &&
+                Util.epsilonEquals(mPeriodicIO.activeTrajectoryPosition, mPeriodicIO.encoderTarget, 5);
+    }
+
+    public boolean hasCargo() {
+        return mPeriodicIO.laserDistance <= 14;
+    }
 
 	@Override
 	public synchronized void zeroSensors() {
-        while(mTalonSensors.isFwdLimitSwitchClosed()) {
-            mArmMaster.set(ControlMode.PercentOutput, .2);
+        if(!mZeroingSensors) {
+            mZeroingSensors = true;
         }
-        try {
-            Thread.sleep(125);
-        } catch (InterruptedException e) { }
-        
-        while(!mTalonSensors.isFwdLimitSwitchClosed()) {
-            mArmMaster.set(ControlMode.PercentOutput, .08);
-        }
-        mArmMaster.set(ControlMode.PercentOutput, 0);
-		mArmMaster.setSelectedSensorPosition(0, 0, 0);
 	}
 
 
@@ -140,7 +165,7 @@ public class RearIntake extends Subsystem {
 	public void outputTelemetry() {
 		SmartDashboard.putNumber("Arm Encoder", mPeriodicIO.encoderPosition);
         SmartDashboard.putNumber("Rear Laser Distance", mPeriodicIO.laserDistance);
-
+        SmartDashboard.putBoolean("Zeroing Elevator", mZeroingSensors);
 	}
 
 	@Override
@@ -150,6 +175,7 @@ public class RearIntake extends Subsystem {
 
 	@Override
 	public void stop() {
+        setOpenLoop(0.0);
 	}
 
 	@Override
@@ -159,36 +185,72 @@ public class RearIntake extends Subsystem {
 	
 	@Override
 	public void writePeriodicOutputs() {
-		if(mClosedLoop) {
-			mArmMaster.set(ControlMode.Position, mPeriodicIO.encoderTarget);
-		} else {
-			mArmMaster.set(ControlMode.PercentOutput, mPeriodicIO.armPercentOutput);
-        }
+		if(mZeroingSensors) {
+			if(mJustCaughtArm.update(mPeriodicIO.forwardLimitClosed)) {
+				mArmMaster.setSelectedSensorPosition(0, 0, 0);
+				mArmMaster.set(ControlMode.PercentOutput, 0);
+                mZeroingSensors = false;
+                hasBeenZeroed = true;
+			} else if(Math.abs(Timer.getFPGATimestamp()-mLastSeenArm)<=.12) {
+				mArmMaster.set(ControlMode.PercentOutput, .2);
+			} else {
+				mArmMaster.set(ControlMode.PercentOutput, -.05);
+			} 
+		}else {
+			switch (mRearIntakeControlState) {
+				case MOTION_MAGIC:
+                    mArmMaster.set(ControlMode.MotionMagic, mPeriodicIO.encoderTarget);
+					break;
+				case POSITION_PID:
+					mArmMaster.set(ControlMode.Position, mPeriodicIO.encoderTarget);
+					break;
+				case OPEN_LOOP:
+					mArmMaster.set(ControlMode.PercentOutput, mPeriodicIO.armPercentOutput);
+					break;
+				default:
+					mArmMaster.set(ControlMode.PercentOutput, 0);
+			}
+		}
         mRollerWheels.set(ControlMode.PercentOutput, mPeriodicIO.rollerPercentOutput);
 	}
 
 	@Override
 	public void readPeriodicInputs() {
         mPeriodicIO.encoderPosition = mArmMaster.getSelectedSensorPosition();
-        byte[] temp = new byte[1];
-        mRearCargoSensor.read(0x52, 1, temp);
-        ByteBuffer buffer = ByteBuffer.wrap(temp); //turns the byte value into a double
-        mPeriodicIO.laserDistance = buffer.getDouble();
-        mPeriodicIO.laserBroken = mPeriodicIO.laserDistance < 13;
+        mPeriodicIO.encoderVelocity = mArmMaster.getSelectedSensorVelocity();
+		if(mRearIntakeControlState == RearIntakeControlState.MOTION_MAGIC) {
+            mPeriodicIO.activeTrajectoryPosition = mArmMaster.getActiveTrajectoryPosition();
+            mPeriodicIO.activeTrajectoryVelocity = mArmMaster.getActiveTrajectoryVelocity();
+        }
+        mPeriodicIO.forwardLimitClosed = mTalonSensors.isFwdLimitSwitchClosed();
+        mPeriodicIO.laserDistance = cargoSensor.getRange();
+        
+    }
+    
+    private enum RearIntakeControlState {
+        OPEN_LOOP,
+        MOTION_MAGIC,
+		POSITION_PID;
 
-        //set current state
-        mCurrentState.mRearArmEncoderPosition = mPeriodicIO.encoderPosition;
-        mCurrentState.mRearArmEncoderSetpoint = mPeriodicIO.encoderTarget;
-        mCurrentState.mRearArmPercent = mPeriodicIO.armPercentOutput;
-        mCurrentState.mRearRollerPercent = mPeriodicIO.rollerPercentOutput;
-        mCurrentState.mRearLaserBroken = mPeriodicIO.laserBroken;
-	}
+		private static RearIntakeControlState[] vals = values();
+	    public RearIntakeControlState next() {
+	        return vals[(this.ordinal()+1) % vals.length];
+		}
+		
+		public RearIntakeControlState prev() {
+			int p = this.ordinal()-1;
+			return p>=0 ? vals[p] : vals[vals.length-1];
+		}
+    }
 
 	public static class PeriodicIO {
 		//Inputs
         public int encoderPosition;
+		public int encoderVelocity;
+		public int activeTrajectoryVelocity;
+		public int activeTrajectoryPosition;
+        public boolean forwardLimitClosed;
         public double laserDistance;
-        public boolean laserBroken;
 
 		//Outputs
 		public int encoderTarget;

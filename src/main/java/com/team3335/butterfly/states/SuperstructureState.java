@@ -1,8 +1,11 @@
 package com.team3335.butterfly.states;
 
 import com.team3335.butterfly.Constants;
+import com.team3335.lib.util.Util;
 
 public class SuperstructureState {
+    //For planner
+    public Goal goal = Goal.GAME_PEICE_OR_CLIMB;
     //Elevator
     public double height = Constants.kElevatorMinHeight;
 
@@ -16,7 +19,9 @@ public class SuperstructureState {
     public double rearRollerPercent = 0.0;
 
     //Not touched by planner
-    public boolean hasRearCargo =false;
+    public boolean elevatorSentLastTrajectory = false;
+    public boolean rearIntakeSentLastTrajectory = false;
+    public boolean hasRearCargo = false;
     public boolean hasCarriageCargo = false;
     public boolean hasHatch = false;
 
@@ -39,7 +44,26 @@ public class SuperstructureState {
     }
     
     public SuperstructureState() {
-        this(Constants.kElevatorMinHeight + Constants.kCenterHeightFromFloorAtMin, 0, false, false, Constants.kRearMinAngle, 0);
+        this(Constants.kElevatorMinHeight, 0, false, false, Constants.kRearMinAngle, 0);
+    }
+
+    public boolean isInRange(SuperstructureState otherState, double heightThreshold, double armThreshold) {
+        return Util.epsilonEquals(otherState.height, height, heightThreshold) &&
+                Util.epsilonEquals(otherState.rearAngle, rearAngle, armThreshold);
+
+    }
+
+    public boolean hasCargo() {
+        return hasCarriageCargo || hasRearCargo;
+    }
+
+    public boolean hasGamePiece() {
+        return hasCargo() || hasHatch;
+    }
+
+    public enum Goal {
+        GAME_PEICE_OR_CLIMB,
+        PLACING
     }
 
 }

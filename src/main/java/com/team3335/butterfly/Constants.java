@@ -2,11 +2,9 @@ package com.team3335.butterfly;
 
 import java.util.HashMap;
 
+import com.revrobotics.Rev2mDistanceSensor.Port;
 import com.team3335.butterfly.ControlBoard.*;
 import com.team3335.butterfly.states.DrivetrainState.DriveModeState;
-
-import edu.wpi.first.wpilibj.I2C;
-import edu.wpi.first.wpilibj.I2C.Port;
 
 
 //NOTE: ALL GEAR RATIOS ALREADY ACCOUNT FOR ANGULAR DIRECTION CHANGES WITH THE SIGN!!!!
@@ -27,6 +25,9 @@ public class Constants {
 	public static final double kFloorToBottomShipCargo = 31.5;
 	public static final double kFloorToTopShipCargo = 48;
 	public static final double kFloorToShipCargo = (kFloorToTopShipCargo + kFloorToBottomShipCargo) / 2;
+
+	public static final double kFloorToHabCargoCenter = 45;
+
 
     //Hatch
     public static final double kHatchTargetWidth = 14.5;
@@ -88,8 +89,8 @@ public class Constants {
 		// 775pro -> 9:1 -> encoder -> 7:1 -> 5:1 -> output
 	public static final double kRearMotorToEncoderRatio = 1/9;
 	public static final double kRearEncoderToOutputRatio = (1/7) * (1/5);
-	public static final double kRearMaxAngle = 90; // Degrees
-	public static final double kRearMinAngle = 0;
+	public static final double kRearMaxAngle = 100; // Degrees
+	public static final double kRearMinAngle = -5;
 
 	
 	
@@ -155,13 +156,13 @@ public class Constants {
 	public static final int kCarriageModule = 1;
 	public static final int kHatchPusher = 2;
 	public static final int kHatchPickup = 3;
-	public static final Port kCarriageCargoSensorPort = I2C.Port.kMXP; //TODO Is this correct?
+	public static final Port kCarriageCargoSensorPort = Port.kMXP; //TODO Is this correct?
 
 	//Rear Pickup 
 	public static final int kMasterArmCANId = 31;
 	public static final int kSlave1ArmCANId = 32; 
 	public static final int kRearRollerWheelCANId = 33; 
-	public static final Port kRearCargoSensorPort = I2C.Port.kOnboard;
+	public static final Port kRearCargoSensorPort = Port.kOnboard;
 	
 	//Controllers - Use -1 for unused controllers
 	public static final GamepadControlBoardType kGamepadType = GamepadControlBoardType.XBOX;

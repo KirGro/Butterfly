@@ -11,11 +11,12 @@ import com.team3335.butterfly.Constants;
 import com.team3335.butterfly.Preferences;
 import com.team3335.butterfly.loops.ILooper;
 import com.team3335.butterfly.loops.Loop;
-import com.team3335.butterfly.states.ElevatorState.ElevatorAction;
 import com.team3335.butterfly.subsystems.Subsystem;
 import com.team3335.lib.util.LatchedBoolean;
+import com.team3335.lib.util.Util;
 
 import edu.wpi.first.wpilibj.Timer;
+import edu.wpi.first.wpilibj.drive.RobotDriveBase.MotorType;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
 public class Elevator extends Subsystem {
@@ -29,10 +30,12 @@ public class Elevator extends Subsystem {
 	private boolean mZeroingSensors = false;
 	private double mLastSeenCarriage = Double.NaN;
 	private LatchedBoolean mJustCaughtCarriage = new LatchedBoolean();
+	private boolean hasBeenZeroed = false;
 
 	private PeriodicIO mPeriodicIO = new PeriodicIO();
 
-	public boolean mClosedLoop; //TODO Make private later
+
+	private ElevatorControlState mElevatorControlState = ElevatorControlState.OPEN_LOOP; //TODO Make private later
 	
 	private final Loop mLoop = new Loop() {
         @Override
@@ -94,6 +97,7 @@ public class Elevator extends Subsystem {
 		mWinchMaster.configForwardSoftLimitThreshold(convertHeightToEncoderTarget(Constants.kElevatorRelativeMaxHeight));
 		mWinchMaster.configReverseSoftLimitEnable(true);
 		mWinchMaster.configReverseSoftLimitThreshold(convertHeightToEncoderTarget(Constants.kElevatorRelativeMinHeight));
+		mWinchMaster.overrideSoftLimitsEnable(false);
 
 		//MotionMagic junk
 		mWinchMaster.configMaxIntegralAccumulator(0, 100000, Constants.kLongCANTimeoutMs);
@@ -107,28 +111,36 @@ public class Elevator extends Subsystem {
 		mWinchMaster.configPeakCurrentDuration(200, Constants.kLongCANTimeoutMs); //254 had 200
 		mWinchMaster.enableCurrentLimit(true);
 
-		mClosedLoop = true;
+		mElevatorControlState = ElevatorControlState.MOTION_MAGIC;
 		
 	}
 
 	/* All Motor Controls */
 
-	public void driveRaw(double percent) {
-		mPeriodicIO.percentOutput = percent;
-	}
+    public synchronized void setOpenLoop(double percentage) {
+        if(mElevatorControlState != ElevatorControlState.OPEN_LOOP) {
+			mElevatorControlState = ElevatorControlState.OPEN_LOOP;
+		}
+        mPeriodicIO.percentOutput = percentage;
+    }
 
+    public synchronized void setMotionMagicPosition(double positionInchesOffGround) {
+        double positionInchesFromZero = positionInchesOffGround - Constants.kElevatorMinHeight;
+        int encoderPosition = (int) Math.round(positionInchesFromZero * Constants.kElevatorTicksPerInch);
+        if(mElevatorControlState != ElevatorControlState.MOTION_MAGIC) {
+			mElevatorControlState = ElevatorControlState.MOTION_MAGIC;
+		}
+		mPeriodicIO.encoderTarget = encoderPosition;
+    }
 
-	public void setEncoderTarget(int position) {
-		mPeriodicIO.encoderTarget = position;
-	} 
-
-	public void setHeightRobot(double height) {
-		setEncoderTarget(convertHeightToEncoderTarget(height + Constants.kElevatorRelativeMinHeight));
-	}
-
-	public void setHeightFloor(double height) {
-		setHeightRobot(height - Constants.kElevatorMinHeight);
-	}
+    public synchronized void setPositionPID(double positionInchesOffGround) {
+        double positionInchesFromZero = positionInchesOffGround - Constants.kElevatorMinHeight;
+        int encoderPosition = (int) Math.round(positionInchesFromZero * Constants.kElevatorTicksPerInch);
+        if (mElevatorControlState != ElevatorControlState.POSITION_PID) {
+            mElevatorControlState = ElevatorControlState.POSITION_PID;
+        }
+        mPeriodicIO.encoderTarget = encoderPosition;
+    }
 
 	public int convertHeightToEncoderTarget(double height) {
 		return (int) Math.round(height * Constants.kElevatorTicksPerInch);
@@ -143,16 +155,24 @@ public class Elevator extends Subsystem {
 		return (mPeriodicIO.encoderPosition/Constants.kElevatorTicksPerInch) - Constants.kElevatorRelativeMinHeight + Constants.kElevatorMinHeight; 
 	}
 
+	
+    public synchronized boolean hasFinishedTrajectory() {
+        return mElevatorControlState == ElevatorControlState.MOTION_MAGIC &&
+                Util.epsilonEquals(mPeriodicIO.activeTrajectoryPosition, mPeriodicIO.encoderTarget, 5);
+    }
+
 	@Override
 	public void zeroSensors() {
-		mZeroingSensors = true;
+		if(!mZeroingSensors) {
+			mZeroingSensors = true;
+		}
 	}
 
 
 	@Override
 	public void outputTelemetry() {
 		SmartDashboard.putNumber("Elevator Encoder", mPeriodicIO.encoderPosition);
-		SmartDashboard.putBoolean("Elevator Closed Loop", mClosedLoop);
+		SmartDashboard.putString("Elevator Control State", mElevatorControlState.toString());
 		SmartDashboard.putNumber("Rere target ", mPeriodicIO.encoderTarget);
 	}
 
@@ -163,6 +183,7 @@ public class Elevator extends Subsystem {
 
 	@Override
 	public void stop() {
+		setOpenLoop(0.0);
 	}
 
 	@Override
@@ -177,28 +198,68 @@ public class Elevator extends Subsystem {
 				mWinchMaster.setSelectedSensorPosition(0, 0, 0);
 				mWinchMaster.set(ControlMode.PercentOutput, 0);
 				mZeroingSensors = false;
+				hasBeenZeroed = true;
+				mWinchMaster.configForwardSoftLimitEnable(true);
+				mWinchMaster.configReverseSoftLimitEnable(true);
 			} else if(Math.abs(Timer.getFPGATimestamp()-mLastSeenCarriage)<=.12) {
 				mWinchMaster.set(ControlMode.PercentOutput, .2);
 			} else {
-				mWinchMaster.set(ControlMode.PercentOutput, .05);
+				mWinchMaster.set(ControlMode.PercentOutput, -.05);
 			} 
-		}else if(mClosedLoop) {
-			mWinchMaster.set(ControlMode.MotionMagic, mPeriodicIO.encoderTarget);
-		} else {
-			mWinchMaster.set(ControlMode.PercentOutput, mPeriodicIO.percentOutput);
+		}else {
+			switch (mElevatorControlState) {
+				case MOTION_MAGIC:
+					mWinchMaster.set(ControlMode.MotionMagic, mPeriodicIO.encoderTarget);
+					break;
+				case POSITION_PID:
+					mWinchMaster.set(ControlMode.Position, mPeriodicIO.encoderTarget);
+					break;
+				case OPEN_LOOP:
+					mWinchMaster.set(ControlMode.PercentOutput, mPeriodicIO.percentOutput);
+					break;
+				default:
+					mWinchMaster.set(ControlMode.PercentOutput, 0);
+			}
 		}
 	}
 
 	@Override
 	public void readPeriodicInputs() {
 		mPeriodicIO.encoderPosition = mWinchMaster.getSelectedSensorPosition();
+		mPeriodicIO.encoderVelocity = mWinchMaster.getSelectedSensorVelocity();
+		if(mElevatorControlState == ElevatorControlState.MOTION_MAGIC) {
+			mPeriodicIO.activeTrajectoryPosition = mWinchMaster.getActiveTrajectoryPosition();
+			mPeriodicIO.activeTrajectoryVelocity = mWinchMaster.getActiveTrajectoryVelocity();
+		}
 		mPeriodicIO.forwardLimitClosed = mTalonSensors.isFwdLimitSwitchClosed();
 	}
 
+
+    private enum ElevatorControlState {
+        OPEN_LOOP,
+        MOTION_MAGIC,
+		POSITION_PID;
+
+		private static ElevatorControlState[] vals = values();
+		
+	    public ElevatorControlState next() {
+	        return vals[(this.ordinal()+1) % vals.length];
+		}
+		
+		public ElevatorControlState prev() {
+			int p = this.ordinal()-1;
+			return p>=0 ? vals[p] : vals[vals.length-1];
+		}
+		
+    }
+
 	public static class PeriodicIO {
 		//Inputs
-		public int encoderPosition = 0;
-		public boolean forwardLimitClosed = false;
+		public int encoderPosition;
+		public int encoderVelocity;
+		public int activeTrajectoryVelocity;
+		public int activeTrajectoryPosition;
+		public boolean forwardLimitClosed;
 
 		//Outputs
 		public int encoderTarget;

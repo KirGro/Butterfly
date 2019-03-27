@@ -3,13 +3,12 @@ package com.team3335.butterfly.subsystems;
 import com.ctre.phoenix.motorcontrol.ControlMode;
 import com.ctre.phoenix.motorcontrol.NeutralMode;
 import com.ctre.phoenix.motorcontrol.can.VictorSPX;
+import com.revrobotics.Rev2mDistanceSensor;
+import com.revrobotics.Rev2mDistanceSensor.RangeProfile;
 import com.team3335.butterfly.Constants;
 import com.team3335.butterfly.Preferences;
 import com.team3335.butterfly.loops.ILooper;
 import com.team3335.butterfly.loops.Loop;
-import com.team3335.butterfly.states.CarriageState;
-import com.team3335.butterfly.states.CarriageState.ArmAction;
-import com.team3335.butterfly.states.RearIntakeState.RollerAction;
 import com.team3335.butterfly.subsystems.Subsystem;
 import com.team3335.lib.util.ChoosableSolenoid;
 import com.team3335.lib.util.ChoosableSolenoid.SolenoidState;
@@ -21,19 +20,11 @@ public class Carriage extends Subsystem {
 	private static Carriage mInstance = new Carriage();
 	
 	private ChoosableSolenoid mHatchPusher, mHatchPickup;
-	private SolenoidState mHatchPusherState, mHatchPickupState;
-	//private double mLastLaunchTime;
-	//private boolean mInLaunchCycle;
-	private boolean mClosedLoop;
 	private VictorSPX mRollerWheels;
-	private RollerAction mRollerAction;
-	private ArmAction mArmAction;
-	private boolean mInAction;
-	private double mActionStartTime;
 
 	private PeriodicIO mPeriodicIO = new PeriodicIO();
 
-	private CarriageState mCurrentState;
+	private Rev2mDistanceSensor cargoSensor;
 	
 	private final Loop mLoop = new Loop() {
         @Override
@@ -46,12 +37,6 @@ public class Carriage extends Subsystem {
         @Override
         public void onLoop(double timestamp) {
             synchronized (Carriage.this) {
-				if(mClosedLoop) {
-
-				} else {
-					checkPusherCycleStatus(timestamp);
-					updateSolenoids();
-				}
             }
         }
 
@@ -76,108 +61,61 @@ public class Carriage extends Subsystem {
 
 		mRollerWheels = new VictorSPX(Constants.kCarriageRollerWheelCANId);
 
+		cargoSensor = new Rev2mDistanceSensor(Constants.kCarriageCargoSensorPort);
+		cargoSensor.setAutomaticMode(true);
+		cargoSensor.setEnabled(true);
+		cargoSensor.setRangeProfile(RangeProfile.kHighSpeed);
+
 		//Set robot intial settings
-		mHatchPickupState = SolenoidState.FORCED_REVERSE;
-		mHatchPusherState = SolenoidState.FORCED_REVERSE;
-		pusherIn();
-		pickupUp();
+		setPushersIn();
+		setArmsUp();
 
 		mRollerWheels.setNeutralMode(NeutralMode.Brake);
 		mRollerWheels.setInverted(true);
 		stopRollers();
-		mRollerAction = RollerAction.NONE;
-		mArmAction = ArmAction.NONE;
-		mActionStartTime = -1;
-		mInAction = false;
 
-		mClosedLoop = false; //TODO Change
 
 
 	}
-	
-    public CarriageState getCurrentCarriageState() {
-        return mCurrentState;
-    }
 
 	/* All Solenoid Controls */
 
-	public void placeHatchCargoship(){
-		if(mArmAction == ArmAction.NONE) {
-			mInAction = true;
-			mArmAction = ArmAction.CARGOSHIP_PLACING;
-			mActionStartTime = Timer.getFPGATimestamp();
-			pickupDown();
-			pusherOut();
-		}
-	}
+	public void setPushersIn() {setPusher(SolenoidState.FORCED_REVERSE);}
+	public void setPushersOut() {setPusher(SolenoidState.FORCED_FORWARD);}
 
-	public void habPickup() {
-		if(mArmAction == ArmAction.NONE) {
-			mInAction = true;
-			mArmAction = ArmAction.HAB_PICKUP;
-			mActionStartTime = Timer.getFPGATimestamp();
-			pusherIn();
-			pickupDown();
-		}
-	}
-
-	private void checkPusherCycleStatus(double time) {
-		if(mArmAction == ArmAction.CARGOSHIP_PLACING) {
-			if(time >= (mActionStartTime + .75)) {
-				pickupDown();
-			}
-			if(time >= (mActionStartTime + Preferences.kPusherTime)) {
-				pusherIn();
-			}
-			if(Preferences.kUsePusherCooldown && time >= (mActionStartTime + Preferences.kPusherTime + Preferences.kCooldownTime)) {
-				mInAction = false;
-				mArmAction = ArmAction.NONE;
-			} else if (time >= (mActionStartTime + Preferences.kPusherTime)){
-				mInAction = false;
-				mArmAction = ArmAction.NONE;
-			}
-		} else if(mArmAction == ArmAction.HAB_PICKUP) {
-			if(time >= (mActionStartTime+Preferences.kHabPickupDelay)) {
-				pickupUp();
-				mInAction = false;
-				mArmAction = ArmAction.NONE;
-			} 
-		}
-	}
-
-	public void pusherIn() {setPusher(SolenoidState.FORCED_REVERSE);}
-	public void pusherOut() {setPusher(SolenoidState.FORCED_FORWARD);}
-
-	private void setPusher(SolenoidState state) {
-		if(mHatchPusherState != state) {
-			mHatchPusherState = state;
+	public void setPusher(SolenoidState state) {
+		if(mPeriodicIO.pusherState != state) {
+			mPeriodicIO.pusherState = state;
 		}	
 	}
 
-	public void pickupUp() {setPickup(SolenoidState.FORCED_REVERSE);}
-	public void pickupDown() {setPickup(SolenoidState.FORCED_FORWARD);}
+	public void setPusher(boolean out) {
+		if(out) {
+			setPushersOut();
+		} else {
+			setPushersIn();
+		}
+	}
+	
 
-	private void setPickup(SolenoidState state) {
-		if(mHatchPickupState != state) {
-			mHatchPickupState = state;
+	public void setArmsUp() {setArms(SolenoidState.FORCED_REVERSE);}
+	public void setArmsDown() {setArms(SolenoidState.FORCED_FORWARD);}
+
+	public void setArms(SolenoidState state) {
+		if(mPeriodicIO.armState != state) {
+			mPeriodicIO.armState = state;
 		}	
 	}
 
-	private void updateSolenoids(){
-		mHatchPusher.setState(mHatchPusherState);
-		mHatchPickup.setState(mHatchPickupState);
-		SmartDashboard.putNumber("updateSolenoids Last Call", Timer.getFPGATimestamp());
+	public void setArms(boolean down) {
+		if(down) {
+			setArmsDown();
+		} else {
+			setArmsUp();
+		}
 	}
 
 	/* All Motor Controls */
-
-	public void grabCargo() {
-		if(!mInAction) {
-			mInAction = true;
-			mActionStartTime = Timer.getFPGATimestamp();
-
-		}
-	}
 
 	public void setShootForward() {setRollerPower(1);}
 	public void setShootReverse() {setRollerPower(-1);}
@@ -187,16 +125,37 @@ public class Carriage extends Subsystem {
 
 	public void stopRollers() {setRollerPower(0);}
 
-	private void setRollerPower(double power) {
-		mRollerWheels.set(ControlMode.PercentOutput, power);
+	public void setRollerPower(double power) {
+		mPeriodicIO.rollerPercent = power;
 	}
+
+	public boolean getArmsDown() {
+		return mPeriodicIO.armState == SolenoidState.FORCED_FORWARD;
+	}
+
+	public boolean getPushersOut() {
+		return mPeriodicIO.pusherState == SolenoidState.FORCED_FORWARD;
+	}
+
+	public double getRollerPercent() {
+		return mPeriodicIO.rollerPercent;
+	}
+
+    public boolean hasCargo() {
+		return mPeriodicIO.laserDistance <= 12;
+    }
+
+    public boolean hasHatch() {
+		return mPeriodicIO.hatchLimitClosed;
+    }
 
 
 	@Override
 	public void outputTelemetry() {
-		SmartDashboard.putString("Pusher State", mHatchPusherState.name());
-		SmartDashboard.putString("Pickup State", mHatchPickupState.name());
-		//SmartDashboard.putBoolean("In Launch Cycle", mInLaunchCycle);
+		SmartDashboard.putString("Pusher State", mPeriodicIO.pusherState.name());
+		SmartDashboard.putString("Arm State", mPeriodicIO.armState.name());
+		SmartDashboard.putNumber("Roller Percent", mPeriodicIO.rollerPercent);
+		SmartDashboard.putNumber("Cargo Laser Distance", mPeriodicIO.laserDistance);
 	}
 
 	@Override
@@ -206,16 +165,56 @@ public class Carriage extends Subsystem {
 
 	@Override
 	public void stop() {
-		pickupUp();
-		pusherIn();
+		setArmsUp();
+		setPushersIn();
+		setRollerPower(0.0);
 	}
 
 	@Override
 	public void registerEnabledLoops(ILooper enabledLooper) {
 		enabledLooper.register(mLoop);
+	}
+
+	@Override
+	public void readPeriodicInputs() {
+		mPeriodicIO.laserDistance = cargoSensor.getRange();
+	}
+	
+	@Override
+	public void writePeriodicOutputs() {
+		mRollerWheels.set(ControlMode.PercentOutput, mPeriodicIO.rollerPercent);
+		mHatchPusher.setState(mPeriodicIO.pusherState);
+		mHatchPickup.setState(mPeriodicIO.armState);
+	}
+
+	private enum CarriageControlState {
+		OPEN_LOOP,
+		PLANNED;
+
+		private static CarriageControlState[] vals = values();
+		
+	    public CarriageControlState next() {
+	        return vals[(this.ordinal()+1) % vals.length];
+		}
+		
+		public CarriageControlState prev() {
+			int p = this.ordinal()-1;
+			return p>=0 ? vals[p] : vals[vals.length-1];
+		}
+		
     }
 
 	public static class PeriodicIO {
+		//inputs (currently not used)
+		public double armsLastChanged;
+		public double pushersLastChanged;
+		public double laserDistance;
+		public boolean hatchLimitClosed;
+
+		//Outputs
+		public double rollerPercent;
+		public SolenoidState armState;
+		public SolenoidState pusherState;
 	}
 }
 

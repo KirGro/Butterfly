@@ -6,6 +6,8 @@ import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import com.team3335.butterfly.loops.Looper;
+import com.team3335.butterfly.states.SuperstructureCommand;
+import com.team3335.butterfly.states.SuperstructureState;
 import com.team3335.butterfly.states.DrivetrainState.DriveModeState;
 import com.team3335.butterfly.states.DrivetrainState.DriveType;
 import com.team3335.butterfly.states.DrivetrainState.DrivetrainWheelState;
@@ -30,8 +32,9 @@ public class Robot extends TimedRobot {
                     NavX.getInstance(),
                     Carriage.getInstance(),
                     Limelight.getInstance(),
-                    Elevator.getInstance()
-                    //RearIntake.getInstance()
+                    Elevator.getInstance(),
+                    RearIntake.getInstance(),
+                    Superstructure.getInstance()
             )
     );
 
@@ -40,18 +43,20 @@ public class Robot extends TimedRobot {
     private Carriage mCarriage = Carriage.getInstance();
     private Limelight mLimelight = Limelight.getInstance();
     private Elevator mElevator = Elevator.getInstance();
-    //private RearIntake mRearIntake = RearIntake.getInstance();
+    private RearIntake mRearIntake = RearIntake.getInstance();
+    private Superstructure mSuperstructure = Superstructure.getInstance();
     
     //Buttons
     private LatchedBoolean mToggleDriveType = new LatchedBoolean();
     private LatchedBoolean mDriveButton1 = new LatchedBoolean();
     private LatchedBoolean mDriveButton2 = new LatchedBoolean();
-    private LatchedBoolean mFireHatch = new LatchedBoolean();
-    private LatchedBoolean mHabPickup = new LatchedBoolean();
-    private LatchedBoolean mHabPickupHeight = new LatchedBoolean();
-    private LatchedBoolean mHatchLowHeight = new LatchedBoolean();
-    private LatchedBoolean mHatchMiddleHeight = new LatchedBoolean();
-    private LatchedBoolean mSwitchElevatorMode = new LatchedBoolean();
+    private LatchedBoolean mToggleTargeting = new LatchedBoolean();
+    private LatchedBoolean mStartAction = new LatchedBoolean();
+    private LatchedBoolean mTogglePlacing = new LatchedBoolean();
+
+    //Practicing
+    private LatchedBoolean mPlaceHatchLow = new LatchedBoolean();
+    private LatchedBoolean mPickupHatch = new LatchedBoolean();
     
     /* STORAGE */
 
@@ -73,6 +78,11 @@ public class Robot extends TimedRobot {
 
     //FULL_VISION
     private Target fvTarget = Preferences.pDefaultTarget;
+
+    private Targeting mTargeting = Preferences.pDefaultTargeting;
+    private Placing mPlacing = Placing.LOW_HATCH;    
+    private Action mAction = Action.NONE;
+    private double mActionStartTime = 0;
     
     public Robot() {
     	
@@ -105,7 +115,7 @@ public class Robot extends TimedRobot {
         mElevator.zeroSensors();
         mDisabledLooper.stop();
         mEnabledLooper.start();
-        mElevator.setEncoderTargetHeight(0);
+        //mElevator.setEncoderTargetHeight(0);
     }
 
     @Override
@@ -143,13 +153,6 @@ public class Robot extends TimedRobot {
         SmartDashboard.putBoolean("db2", db2);
         SmartDashboard.putString("SkidMode", skidModeState.toString());
         SmartDashboard.putString("MecanumMode", mecanumModeState.toString());
-        
-        boolean fireHatch = mFireHatch.update(mControlBoard.getHatchPusher());
-        boolean habPickup = mHabPickup.update(mControlBoard.getHabPickup());
-        
-        boolean habPickupHeight = mHabPickupHeight.update(mControlBoard.getHabPickupHeight());
-        boolean hatchLowHeight = mHatchLowHeight.update(mControlBoard.getHatchLowHeight());
-        boolean hatchMiddleHeight = mHatchMiddleHeight.update(mControlBoard.getHatchMiddleHeight());
 
         if(toggleDriveType) type = type.next();
         SmartDashboard.putString("Type", type.toString());
@@ -226,7 +229,7 @@ public class Robot extends TimedRobot {
         }
 
         /* CARRIAGE STUFF */
-
+        /* OLD
         if(fireHatch) {
             mCarriage.placeHatchCargoship();
         } else if(habPickup) {
@@ -240,14 +243,8 @@ public class Robot extends TimedRobot {
             mCarriage.stopRollers();
         } 
         boolean switchEM = mSwitchElevatorMode.update(mControlBoard.getSwitchElevatorMode());
-        if(switchEM) {
-            mElevator.mClosedLoop = !mElevator.mClosedLoop;
-        }
-        if(Math.abs(mControlBoard.getElevator())>=.1) {
-            mElevator.driveRaw(mControlBoard.getElevator());
-        } else {
-            mElevator.driveRaw(0);
-        }
+
+        
         
         if(mControlBoard.getHabPickupHeight()) {
             mElevator.setHeightRobot(2);
@@ -255,13 +252,151 @@ public class Robot extends TimedRobot {
             mElevator.setEncoderTargetHeight(0);
         } else if(mControlBoard.getHatchMiddleHeight()) {
             mElevator.setEncoderTargetHeight(5);
+        }*/
+
+        /*
+        SuperstructureState currentState = mSuperstructure.getObservedState();
+        if(mToggleTargeting.update(mControlBoard.getToggleTargeting())) {
+            mTargeting = mTargeting.next();
+        }
+        if(mAction == Action.NONE && mTogglePlacing.update(mControlBoard.getTogglePlacing())) {
+            if(currentState.hasCargo()) {
+                mPlacing = mPlacing.next();
+                if(mPlacing != Placing.LOW_CARGO || mPlacing != Placing.SHIP_CARGO || mPlacing != Placing.MID_CARGO) {
+                    mPlacing = Placing.LOW_CARGO;
+                }
+            } else if(currentState.hasHatch) {
+                mPlacing = mPlacing.next();
+                if(mPlacing != Placing.LOW_HATCH || mPlacing != Placing.MID_HATCH) {
+                    mPlacing = Placing.LOW_HATCH;
+                }
+
+            } else if(mTargeting == Targeting.HATCH){
+                mPlacing = mPlacing.next();
+                if(mPlacing != Placing.LOW_HATCH || mPlacing != Placing.MID_HATCH) {
+                    mPlacing = Placing.LOW_HATCH;
+                }
+            } else if(mTargeting == Targeting.CARGO) {
+                mPlacing = mPlacing.next();
+                if(mPlacing != Placing.LOW_CARGO || mPlacing != Placing.SHIP_CARGO || mPlacing != Placing.MID_CARGO) {
+                    mPlacing = Placing.LOW_CARGO;
+                }
+            }
         }
 
-        
+        boolean inPractice = true;
+        SuperstructureCommand command = new SuperstructureCommand();
+        if(!currentState.hasGamePiece() && !inPractice) {
+            if(mTargeting == Targeting.HATCH) {
+                command.height = Constants.kFloorToLowHatchCenter + Constants.kElevatorReachOffset;
+            } else if(mTargeting == Targeting.CARGO) {
+                command.height = Constants.kFloorToHabCargoCenter;
+                command.angle = 90;
+                command.carriageRollerPercent = -.1;
+                command.rearRollerPercent = -.1;
+            } else {
+                command.height = Constants.kElevatorMinHeight+6;
+            }
+        } else if(mAction == Action.NONE && mStartAction.update(mControlBoard.getStartAction())){
+            if(!currentState.hasGamePiece()) {
+                if(!currentState.hasHatch) {
+                    mAction = Action.HATCH_HAB_PICKUP;
+                    mActionStartTime = timestamp;
+                    command.armsDown = true;
+                    command.height = Constants.kFloorToLowHatchCenter + Constants.kElevatorReachOffset;
+                }
+            } else {
+                
+            }
+        } 
 
-        
+        switch(mAction) {
+            case HATCH_FLOOR_PICKUP:
+            case HATCH_HAB_PICKUP:
+                if(timestamp-mActionStartTime > .125) {
+
+                }
+        }
+
+
+        mSuperstructure.setFromCommandState(command);
+        */
+
+        //Practice code
+        SuperstructureCommand command = new SuperstructureCommand();
+        SuperstructureState currentState = mSuperstructure.getObservedState();
+        if(mAction == Action.NONE) {
+            if(mPlaceHatchLow.update(mControlBoard.getHatchPusher())) {
+                mAction = Action.PLACING_HATCH;
+                mActionStartTime = timestamp;
+                command.pushersOut = false;
+                command.armsDown = true;
+            } else if(mPickupHatch.update(mControlBoard.getHabPickup())) {
+                mAction = Action.HATCH_HAB_PICKUP;
+                mActionStartTime = timestamp;
+                command.pushersOut = false;
+                command.armsDown = true;
+            }
+        } else {
+            if(mAction == Action.HATCH_HAB_PICKUP) {
+                if(timestamp-mActionStartTime < .6) {
+                    
+                } else if(timestamp-mActionStartTime < .12){
+
+                }
+
+            } else if(mAction == Action.PLACING_HATCH) {
+
+            }
+        }
+        //mSuperstructure.setFromCommandState(command);
     }
     
+    
+    
+
+    public enum Targeting {
+        HATCH,
+        CARGO,
+        CLIMB;
+
+        
+		private static Targeting[] vals = values();
+	    public Targeting next() {
+	        return vals[(this.ordinal()+1) % vals.length];
+		}
+		
+		public Targeting prev() {
+			int p = this.ordinal()-1;
+			return p>=0 ? vals[p] : vals[vals.length-1];
+		}
+    }
+
+    public enum Action {
+        NONE,
+        HATCH_FLOOR_PICKUP,
+        HATCH_HAB_PICKUP,
+        PLACING_HATCH,
+        PLACING_CARGO
+    }
+
+    public enum Placing {
+        LOW_HATCH,
+        MID_HATCH,
+        LOW_CARGO,
+        SHIP_CARGO,
+        MID_CARGO;
+        
+		private static Placing[] vals = values();
+	    public Placing next() {
+	        return vals[(this.ordinal()+1) % vals.length];
+		}
+		
+		public Placing prev() {
+			int p = this.ordinal()-1;
+			return p>=0 ? vals[p] : vals[vals.length-1];
+		}
+    }
 }
 
 
