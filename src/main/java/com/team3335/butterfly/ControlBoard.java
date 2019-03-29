@@ -90,6 +90,11 @@ public class ControlBoard implements IControlBoard{
 	}
 
 	@Override
+	public boolean getHatchGrabber() {
+		return mDriveControlBoard.getHatchGrabber();
+	}
+
+	@Override
 	public boolean getHabPickup() {
 		return mDriveControlBoard.getHabPickup();
 	}

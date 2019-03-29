@@ -52,12 +52,17 @@ public class GamepadDriveControlBoard implements IDriveControlBoard{
 
 	@Override
 	public boolean getHatchPusher(){
-		return mJoystick.getRawButton(Constants.buttonNameToId.get("A"));
+		return mJoystick.getRawButton(Constants.buttonNameToId.get("Y"));
+	}
+
+	@Override
+	public boolean getHatchGrabber() {
+		return mJoystick.getRawButton(Constants.buttonNameToId.get("B"));
 	}
 
 	@Override
 	public boolean getToggleDriveType() {
-		return mJoystick.getRawButton(Constants.buttonNameToId.get("Y"));
+		return mJoystick.getRawButton(Constants.buttonNameToId.get("Back"));
 	}
 
 	@Override
@@ -72,7 +77,7 @@ public class GamepadDriveControlBoard implements IDriveControlBoard{
 
 	@Override
 	public boolean getHabPickup() {
-		return mJoystick.getRawButton(Constants.buttonNameToId.get("B"));
+		return false;//mJoystick.getRawButton(Constants.buttonNameToId.get("B"));
 	}
 
 	@Override
@@ -82,7 +87,7 @@ public class GamepadDriveControlBoard implements IDriveControlBoard{
 
 	@Override
 	public boolean getSwitchElevatorMode() {
-		return mJoystick.getRawButton(Constants.buttonNameToId.get("Back"));
+		return false; //mJoystick.getRawButton(Constants.buttonNameToId.get("Back"));
 	}
 
 	@Override

@@ -42,7 +42,8 @@ public class DrivetrainState {
         CUSTOM,
 		AUTO_SWITCHING,
 		VISION_ASSIST,
-        FULL_VISION;
+		FULL_VISION,
+		DUNCAN;
         
         protected static DriveType[] types = DriveType.values();
 		public DriveType next() {

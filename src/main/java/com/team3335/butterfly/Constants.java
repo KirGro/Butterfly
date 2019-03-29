@@ -154,8 +154,8 @@ public class Constants {
 	public static final int kCarriageRollerWheelCANId = 23;
 
 	public static final int kCarriageModule = 1;
-	public static final int kHatchPusher = 2;
-	public static final int kHatchPickup = 3;
+	public static final int kHatchPusher = 6; //TODO 2;
+	public static final int kHatchPickup = 7; //TODO 3;
 	public static final Port kCarriageCargoSensorPort = Port.kMXP; //TODO Is this correct?
 
 	//Rear Pickup 

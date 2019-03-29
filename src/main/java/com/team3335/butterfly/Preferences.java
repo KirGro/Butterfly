@@ -1,12 +1,10 @@
 package com.team3335.butterfly;
 
-import com.team3335.butterfly.Robot.Targeting;
 import com.team3335.butterfly.states.DrivetrainState.*;
 import com.team3335.butterfly.subsystems.Limelight.Target;
 
 public class Preferences {
 	//Planning
-	public static Targeting pDefaultTargeting = Targeting.HATCH;
 	public static boolean pDefaultPlacingLow = true;
 	
 	//Drivetrain
@@ -14,28 +12,12 @@ public class Preferences {
 	public static DriveModeState pMecanumDefaultMode = DriveModeState.MECANUM_ROBOT_RELATIVE;
 	public static DriveModeState pSkidSteerDefaultMode = DriveModeState.TANK;
 	public static boolean pUseDrivetrainWearPrevention = false; //TODO Feature not currently available - Attempts to decrease wear on drivetrain during extreme using by dynamically adjusting speed and drivetrain state
-	public static DriveType pDefaultDriveType = DriveType.CUSTOM;
+	public static DriveType pDefaultDriveType = DriveType.DUNCAN;
 
 	public static double kDriveP = .6;
 	public static double kDriveI = .00001;
 	public static double kDriveD = 50;
 
-
-	//Carriage
-	public static double pControlPower = .1;
-
-	public static double kPusherTime = 1.5;
-	public static boolean kUsePusherCooldown = true;
-	public static double kCooldownTime = 1.;
-
-	public static double kHabPickupDelay = 1;
-
-	//Rear Intake
-	public static double kCargoPickupAngle = 70; //TODO test cargo pickup angle
-	public static double kClimbingAngle = 80; //TODO figure out climbing angle
-
-	// Weird but rollers
-	public static double kRollerIntakePercent = .3;
 	
 
 	//Controller

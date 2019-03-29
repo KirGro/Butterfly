@@ -2,19 +2,20 @@ package com.team3335.butterfly;
 
 import java.util.Arrays;
 
+import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import com.team3335.butterfly.loops.Looper;
-import com.team3335.butterfly.states.SuperstructureCommand;
-import com.team3335.butterfly.states.SuperstructureState;
 import com.team3335.butterfly.states.DrivetrainState.DriveModeState;
 import com.team3335.butterfly.states.DrivetrainState.DriveType;
 import com.team3335.butterfly.states.DrivetrainState.DrivetrainWheelState;
 import com.team3335.butterfly.subsystems.*;
 import com.team3335.butterfly.subsystems.Limelight.Target;
 import com.team3335.lib.driveassist.*;
+import com.team3335.lib.util.ChoosableSolenoid;
 import com.team3335.lib.util.LatchedBoolean;
+import com.team3335.lib.util.ChoosableSolenoid.SolenoidState;
 
 public class Robot extends TimedRobot {
     private Looper mEnabledLooper = new Looper();
@@ -32,9 +33,7 @@ public class Robot extends TimedRobot {
                     NavX.getInstance(),
                     Carriage.getInstance(),
                     Limelight.getInstance(),
-                    Elevator.getInstance(),
-                    RearIntake.getInstance(),
-                    Superstructure.getInstance()
+                    Elevator.getInstance()
             )
     );
 
@@ -43,8 +42,6 @@ public class Robot extends TimedRobot {
     private Carriage mCarriage = Carriage.getInstance();
     private Limelight mLimelight = Limelight.getInstance();
     private Elevator mElevator = Elevator.getInstance();
-    private RearIntake mRearIntake = RearIntake.getInstance();
-    private Superstructure mSuperstructure = Superstructure.getInstance();
     
     //Buttons
     private LatchedBoolean mToggleDriveType = new LatchedBoolean();
@@ -78,11 +75,9 @@ public class Robot extends TimedRobot {
 
     //FULL_VISION
     private Target fvTarget = Preferences.pDefaultTarget;
-
-    private Targeting mTargeting = Preferences.pDefaultTargeting;
-    private Placing mPlacing = Placing.LOW_HATCH;    
-    private Action mAction = Action.NONE;
-    private double mActionStartTime = 0;
+    
+    //DUNCAN
+    private DrivetrainWheelState duncanState = Preferences.pDefaultDrivetrainWheelState;
     
     public Robot() {
     	
@@ -135,7 +130,12 @@ public class Robot extends TimedRobot {
         SmartDashboard.putString("Match Cycle", "AUTONOMOUS");
     }
     
-    
+    //TODO REMOVE TEMPORARY CRAP
+    ChoosableSolenoid pusher = new ChoosableSolenoid(1, 2);
+    ChoosableSolenoid hatchGrabber = new ChoosableSolenoid(1, 3);
+    LatchedBoolean pusherToggle = new LatchedBoolean();
+    LatchedBoolean hatchGrabberToggle = new LatchedBoolean();
+
     @Override
     public void teleopPeriodic() {
         SmartDashboard.putString("Match Cycle", "TELEOP");
@@ -153,6 +153,7 @@ public class Robot extends TimedRobot {
         SmartDashboard.putBoolean("db2", db2);
         SmartDashboard.putString("SkidMode", skidModeState.toString());
         SmartDashboard.putString("MecanumMode", mecanumModeState.toString());
+
 
         if(toggleDriveType) type = type.next();
         SmartDashboard.putString("Type", type.toString());
@@ -191,8 +192,12 @@ public class Robot extends TimedRobot {
                 if(db1) asTarget.prev();
                 if(db2) asTarget.next();
                 break;
+            case DUNCAN:
+                if(db2) duncanState.next();
+                break;
 
         }
+        
         //Send stuff to specific drivetrain helpers to run calculations and then those to drivetrain
         DriveModeState usingMode = (wheelState==DrivetrainWheelState.SKID_STEER ? skidModeState : mecanumModeState);
         mDrivetrain.setWheelState(wheelState);
@@ -226,198 +231,27 @@ public class Robot extends TimedRobot {
             case FULL_VISION:
                 mDrivetrain.setPositionFollowing(mVisionTargetDriver.pureVisionDriveControl(fvTarget));
                 break;
+            case DUNCAN:
+                switch(duncanState) {
+                    case SKID_STEER:
+                        mDrivetrain.setOpenLoop(mButterflyDriveHelper.butterflyDrive(f1, s, r, 0, DriveModeState.ARCADE, DrivetrainWheelState.SKID_STEER, true));
+                        break;
+                    case MECANUM:
+                        mDrivetrain.setOpenLoop(mButterflyDriveHelper.butterflyDrive(f1, s, r, 0, DriveModeState.MECANUM_ROBOT_RELATIVE, DrivetrainWheelState.MECANUM, true));
+                        break;
+
+                }
+                break;
         }
 
-        /* CARRIAGE STUFF */
-        /* OLD
-        if(fireHatch) {
-            mCarriage.placeHatchCargoship();
-        } else if(habPickup) {
-            mCarriage.habPickup();
-            mElevator.setEncoderTargetHeight(4);
+        if(pusherToggle.update(mControlBoard.getHatchPusher())) {
+            pusher.setState(pusher.getRequestedState()==SolenoidState.FORCED_FORWARD ? SolenoidState.FORCED_REVERSE : SolenoidState.FORCED_FORWARD);
+        }
+        if(hatchGrabberToggle.update(mControlBoard.getHatchGrabber())) {
+            hatchGrabber.setState(hatchGrabber.getRequestedState()==SolenoidState.FORCED_FORWARD ? SolenoidState.FORCED_REVERSE : SolenoidState.FORCED_FORWARD);
         }
 
-        if(mControlBoard.getUseAssist()) {
-            mCarriage.setShootForward();
-        } else {
-            mCarriage.stopRollers();
-        } 
-        boolean switchEM = mSwitchElevatorMode.update(mControlBoard.getSwitchElevatorMode());
-
-        
-        
-        if(mControlBoard.getHabPickupHeight()) {
-            mElevator.setHeightRobot(2);
-        } else if(mControlBoard.getHatchLowHeight()) {
-            mElevator.setEncoderTargetHeight(0);
-        } else if(mControlBoard.getHatchMiddleHeight()) {
-            mElevator.setEncoderTargetHeight(5);
-        }*/
-
-        /*
-        SuperstructureState currentState = mSuperstructure.getObservedState();
-        if(mToggleTargeting.update(mControlBoard.getToggleTargeting())) {
-            mTargeting = mTargeting.next();
-        }
-        if(mAction == Action.NONE && mTogglePlacing.update(mControlBoard.getTogglePlacing())) {
-            if(currentState.hasCargo()) {
-                mPlacing = mPlacing.next();
-                if(mPlacing != Placing.LOW_CARGO || mPlacing != Placing.SHIP_CARGO || mPlacing != Placing.MID_CARGO) {
-                    mPlacing = Placing.LOW_CARGO;
-                }
-            } else if(currentState.hasHatch) {
-                mPlacing = mPlacing.next();
-                if(mPlacing != Placing.LOW_HATCH || mPlacing != Placing.MID_HATCH) {
-                    mPlacing = Placing.LOW_HATCH;
-                }
-
-            } else if(mTargeting == Targeting.HATCH){
-                mPlacing = mPlacing.next();
-                if(mPlacing != Placing.LOW_HATCH || mPlacing != Placing.MID_HATCH) {
-                    mPlacing = Placing.LOW_HATCH;
-                }
-            } else if(mTargeting == Targeting.CARGO) {
-                mPlacing = mPlacing.next();
-                if(mPlacing != Placing.LOW_CARGO || mPlacing != Placing.SHIP_CARGO || mPlacing != Placing.MID_CARGO) {
-                    mPlacing = Placing.LOW_CARGO;
-                }
-            }
-        }
-
-        boolean inPractice = true;
-        SuperstructureCommand command = new SuperstructureCommand();
-        if(!currentState.hasGamePiece() && !inPractice) {
-            if(mTargeting == Targeting.HATCH) {
-                command.height = Constants.kFloorToLowHatchCenter + Constants.kElevatorReachOffset;
-            } else if(mTargeting == Targeting.CARGO) {
-                command.height = Constants.kFloorToHabCargoCenter;
-                command.angle = 90;
-                command.carriageRollerPercent = -.1;
-                command.rearRollerPercent = -.1;
-            } else {
-                command.height = Constants.kElevatorMinHeight+6;
-            }
-        } else if(mAction == Action.NONE && mStartAction.update(mControlBoard.getStartAction())){
-            if(!currentState.hasGamePiece()) {
-                if(!currentState.hasHatch) {
-                    mAction = Action.HATCH_HAB_PICKUP;
-                    mActionStartTime = timestamp;
-                    command.armsDown = true;
-                    command.height = Constants.kFloorToLowHatchCenter + Constants.kElevatorReachOffset;
-                }
-            } else {
-                
-            }
-        } 
-
-        switch(mAction) {
-            case HATCH_FLOOR_PICKUP:
-            case HATCH_HAB_PICKUP:
-                if(timestamp-mActionStartTime > .125) {
-
-                }
-        }
-
-
-        mSuperstructure.setFromCommandState(command);
-        */
-
-        //Practice code
-        SuperstructureCommand command = new SuperstructureCommand();
-        SuperstructureState currentState = mSuperstructure.getObservedState();
-        if(mAction == Action.NONE) {
-            if(mPlaceHatchLow.update(mControlBoard.getHatchPusher())) {
-                mAction = Action.PLACING_HATCH;
-                mActionStartTime = timestamp;
-                command.pushersOut = false;
-                command.armsDown = true;
-            } else if(mPickupHatch.update(mControlBoard.getHabPickup())) {
-                mAction = Action.HATCH_HAB_PICKUP;
-                mActionStartTime = timestamp;
-                command.pushersOut = false;
-                command.armsDown = true;
-            }
-        } else {
-            if(mAction == Action.HATCH_HAB_PICKUP) {
-                if(timestamp-mActionStartTime < .6) {
-                    
-                } else if(timestamp-mActionStartTime < .12){
-
-                }
-
-            } else if(mAction == Action.PLACING_HATCH) {
-
-            }
-        }
-        //mSuperstructure.setFromCommandState(command);
+        mElevator.setOpenLoop(mControlBoard.getElevator());
     }
     
-    
-    
-
-    public enum Targeting {
-        HATCH,
-        CARGO,
-        CLIMB;
-
-        
-		private static Targeting[] vals = values();
-	    public Targeting next() {
-	        return vals[(this.ordinal()+1) % vals.length];
-		}
-		
-		public Targeting prev() {
-			int p = this.ordinal()-1;
-			return p>=0 ? vals[p] : vals[vals.length-1];
-		}
-    }
-
-    public enum Action {
-        NONE,
-        HATCH_FLOOR_PICKUP,
-        HATCH_HAB_PICKUP,
-        PLACING_HATCH,
-        PLACING_CARGO
-    }
-
-    public enum Placing {
-        LOW_HATCH,
-        MID_HATCH,
-        LOW_CARGO,
-        SHIP_CARGO,
-        MID_CARGO;
-        
-		private static Placing[] vals = values();
-	    public Placing next() {
-	        return vals[(this.ordinal()+1) % vals.length];
-		}
-		
-		public Placing prev() {
-			int p = this.ordinal()-1;
-			return p>=0 ? vals[p] : vals[vals.length-1];
-		}
-    }
 }
-
-
-        /*
-    	if(mLimelight.hasTarget() && mControlBoard.getUseAssist()) {
-            //mDrivetrain.setOpenLoop(mVisionTargetDriver.pureVisionDriveRaw(0)); //Old way using raw velocities
-            mDrivetrain.setPositionFollowing(mVisionTargetDriver.pureVisionDriveControl(Target.HATCH)); //New way using actual distances and encoders
-    		
-    	}else {
-    		switch(mode) {
-    			case TANK:
-    				mDrivetrain.setOpenLoop(mButterflyDriveHelper.butterflyDrive(forward, forward2, rotation, 0, mode, wheel, tempBrake));
-    	        	break;
-    			case ARCADE:
-    	        	mDrivetrain.setOpenLoop(mButterflyDriveHelper.butterflyDrive(forward, sideway, rotation, 0, mode, wheel, tempBrake));
-    	        	break;
-                case MECANUM_FIELD_RELATIVE:
-                    mDrivetrain.setOpenLoop(mButterflyDriveHelper.butterflyDrive(forward, sideway, rotation, mNavX.getYaw(), mode, wheel, tempBrake));
-                    break;
-    			case MECANUM_ROBOT_RELATIVE:
-    	        	mDrivetrain.setOpenLoop(mButterflyDriveHelper.butterflyDrive(forward, sideway, rotation, 0, mode, wheel, tempBrake));
-    	        	break;    			
-    		}
-    	}*/

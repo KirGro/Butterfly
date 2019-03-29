@@ -27,8 +27,7 @@ public class Elevator extends Subsystem {
 
 	private SensorCollection mTalonSensors;
 
-	private boolean mZeroingSensors = false;
-	private double mLastSeenCarriage = Double.NaN;
+	private boolean mZeroingSensors = false, mSeenAtZeroingStart = false;
 	private LatchedBoolean mJustCaughtCarriage = new LatchedBoolean();
 	private boolean hasBeenZeroed = false;
 
@@ -47,9 +46,6 @@ public class Elevator extends Subsystem {
         @Override
         public void onLoop(double timestamp) {
             synchronized (Elevator.this) {
-				if(mPeriodicIO.forwardLimitClosed) {
-					mLastSeenCarriage = Timer.getFPGATimestamp();
-				}
 
             }
         }
@@ -77,8 +73,8 @@ public class Elevator extends Subsystem {
 
 		//Set robot intial settings
 		mWinchSlave1.follow(mWinchMaster);
-		mWinchMaster.setInverted(true);
-		mWinchSlave1.setInverted(true);
+		mWinchMaster.setInverted(false);
+		mWinchSlave1.setInverted(false);
 
 		mWinchMaster.setNeutralMode(NeutralMode.Brake);
 		mWinchSlave1.setNeutralMode(NeutralMode.Brake);
@@ -111,7 +107,7 @@ public class Elevator extends Subsystem {
 		mWinchMaster.configPeakCurrentDuration(200, Constants.kLongCANTimeoutMs); //254 had 200
 		mWinchMaster.enableCurrentLimit(true);
 
-		mElevatorControlState = ElevatorControlState.MOTION_MAGIC;
+		mElevatorControlState = ElevatorControlState.OPEN_LOOP;
 		
 	}
 
@@ -121,7 +117,7 @@ public class Elevator extends Subsystem {
         if(mElevatorControlState != ElevatorControlState.OPEN_LOOP) {
 			mElevatorControlState = ElevatorControlState.OPEN_LOOP;
 		}
-        mPeriodicIO.percentOutput = percentage;
+        mPeriodicIO.percentOutput = percentage>.04 ? percentage : 0;
     }
 
     public synchronized void setMotionMagicPosition(double positionInchesOffGround) {
@@ -165,6 +161,7 @@ public class Elevator extends Subsystem {
 	public void zeroSensors() {
 		if(!mZeroingSensors) {
 			mZeroingSensors = true;
+			mSeenAtZeroingStart = mPeriodicIO.forwardLimitClosed;
 		}
 	}
 
@@ -173,7 +170,9 @@ public class Elevator extends Subsystem {
 	public void outputTelemetry() {
 		SmartDashboard.putNumber("Elevator Encoder", mPeriodicIO.encoderPosition);
 		SmartDashboard.putString("Elevator Control State", mElevatorControlState.toString());
-		SmartDashboard.putNumber("Rere target ", mPeriodicIO.encoderTarget);
+		SmartDashboard.putNumber("Elevator Target", mPeriodicIO.encoderTarget);
+		SmartDashboard.putBoolean("Carriage Seen", mPeriodicIO.forwardLimitClosed);
+		SmartDashboard.putNumber("Elevator Percent Output", mPeriodicIO.percentOutput);
 	}
 
 	@Override
@@ -194,19 +193,19 @@ public class Elevator extends Subsystem {
 	@Override
 	public void writePeriodicOutputs() {
 		if(mZeroingSensors) {
-			if(mJustCaughtCarriage.update(mPeriodicIO.forwardLimitClosed)) {
+			if(mSeenAtZeroingStart && Math.abs(Timer.getFPGATimestamp()-mPeriodicIO.lastSeenCarriage)<=.24) {
+				mWinchMaster.set(ControlMode.PercentOutput, .1);
+			} else if(mJustCaughtCarriage.update(mPeriodicIO.forwardLimitClosed)) {
 				mWinchMaster.setSelectedSensorPosition(0, 0, 0);
 				mWinchMaster.set(ControlMode.PercentOutput, 0);
 				mZeroingSensors = false;
 				hasBeenZeroed = true;
 				mWinchMaster.configForwardSoftLimitEnable(true);
 				mWinchMaster.configReverseSoftLimitEnable(true);
-			} else if(Math.abs(Timer.getFPGATimestamp()-mLastSeenCarriage)<=.12) {
-				mWinchMaster.set(ControlMode.PercentOutput, .2);
 			} else {
 				mWinchMaster.set(ControlMode.PercentOutput, -.05);
 			} 
-		}else {
+		}else if(hasBeenZeroed){
 			switch (mElevatorControlState) {
 				case MOTION_MAGIC:
 					mWinchMaster.set(ControlMode.MotionMagic, mPeriodicIO.encoderTarget);
@@ -232,6 +231,7 @@ public class Elevator extends Subsystem {
 			mPeriodicIO.activeTrajectoryVelocity = mWinchMaster.getActiveTrajectoryVelocity();
 		}
 		mPeriodicIO.forwardLimitClosed = mTalonSensors.isFwdLimitSwitchClosed();
+		mPeriodicIO.lastSeenCarriage = mPeriodicIO.forwardLimitClosed ? Timer.getFPGATimestamp() : mPeriodicIO.lastSeenCarriage;
 	}
 
 
@@ -260,6 +260,7 @@ public class Elevator extends Subsystem {
 		public int activeTrajectoryVelocity;
 		public int activeTrajectoryPosition;
 		public boolean forwardLimitClosed;
+		public double lastSeenCarriage;
 
 		//Outputs
 		public int encoderTarget;

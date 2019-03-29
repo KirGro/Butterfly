@@ -67,6 +67,14 @@ public class ChoosableSolenoid {
 			}
 		}
 	}
+
+	/**
+	 * @return Returns the requested state sent to the cylinder
+	 */
+	public SolenoidState toggleState() {
+		requestedCurrentState = requestedCurrentState == SolenoidState.FORCED_FORWARD ? SolenoidState.FORCED_REVERSE : SolenoidState.FORCED_FORWARD;
+		return requestedCurrentState;
+	}
 	
 	public SolenoidState getRequestedState() {
 		return requestedCurrentState;
@@ -81,6 +89,10 @@ public class ChoosableSolenoid {
 		FORCED_FORWARD,
 		FORCED_REVERSE,
 		OFF,
-		NEUTRAL
+		NEUTRAL;
+
+		public SolenoidState toggle() {
+			return this == SolenoidState.FORCED_FORWARD ? FORCED_REVERSE : FORCED_FORWARD;
+		}
 	}
 }
