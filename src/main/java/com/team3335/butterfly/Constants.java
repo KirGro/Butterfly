@@ -84,15 +84,6 @@ public class Constants {
 
 	public static final int kElevatorTicksPerInch = (int) Math.round(Constants.kSRXEncoderCPR / (2 * Constants.kElevatorScalarFactor * Constants.kElevatorDrumDiameter * Math.PI * Constants.kEGearRatio2 * Constants.kEGearRatio2));
 
-	//RearIntake
-
-		// 775pro -> 9:1 -> encoder -> 7:1 -> 5:1 -> output
-	public static final double kRearMotorToEncoderRatio = 1/9;
-	public static final double kRearEncoderToOutputRatio = (1/7) * (1/5);
-	public static final double kRearMaxAngle = 100; // Degrees
-	public static final double kRearMinAngle = -5;
-
-	
 	
 	//Vision
 	public static final double kCameraHeight = (kRobot == 2 ? 36 + 10/16 : 36);
@@ -154,15 +145,9 @@ public class Constants {
 	public static final int kCarriageRollerWheelCANId = 23;
 
 	public static final int kCarriageModule = 1;
-	public static final int kHatchPusher = 6; //TODO 2;
-	public static final int kHatchPickup = 7; //TODO 3;
-	public static final Port kCarriageCargoSensorPort = Port.kMXP; //TODO Is this correct?
-
-	//Rear Pickup 
-	public static final int kMasterArmCANId = 31;
-	public static final int kSlave1ArmCANId = 32; 
-	public static final int kRearRollerWheelCANId = 33; 
-	public static final Port kRearCargoSensorPort = Port.kOnboard;
+	public static final int kHatchPusher = 2;
+	public static final int kHatchGrabber = 3;
+	public static final Port kCarriageCargoSensorPort = Port.kOnboard;
 	
 	//Controllers - Use -1 for unused controllers
 	public static final GamepadControlBoardType kGamepadType = GamepadControlBoardType.XBOX;

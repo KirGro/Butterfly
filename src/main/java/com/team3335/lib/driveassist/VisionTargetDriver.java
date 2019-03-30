@@ -1,7 +1,5 @@
 package com.team3335.lib.driveassist;
 
-import java.nio.file.Path;
-
 import com.team3335.butterfly.Constants;
 import com.team3335.butterfly.states.DrivetrainState.*;
 import com.team3335.butterfly.subsystems.Limelight;
@@ -33,7 +31,7 @@ public class VisionTargetDriver {
         if(mLimelight.isTarget()){
             return DriveIntent.MECANUM_BRAKE;
         }*/
-        if(false)return oldWay();
+        if(false) return oldWay();
         else return smartPath();
     }
 

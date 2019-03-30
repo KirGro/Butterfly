@@ -32,7 +32,7 @@ public class Elevator extends Subsystem {
 	private PeriodicIO mPeriodicIO = new PeriodicIO();
 
 
-	private ElevatorControlState mElevatorControlState = ElevatorControlState.OPEN_LOOP; //TODO Make private later
+	private ElevatorControlState mElevatorControlState = ElevatorControlState.MOTION_MAGIC;
 	
 	private final Loop mLoop = new Loop() {
         @Override

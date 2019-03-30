@@ -1,5 +1,6 @@
 package com.team3335.butterfly.subsystems;
 
+import com.team3335.butterfly.Constants;
 import com.team3335.butterfly.loops.ILooper;
 import com.team3335.butterfly.loops.Loop;
 import com.team3335.lib.util.ChoosableSolenoid;
@@ -43,8 +44,8 @@ public class Carriage extends Subsystem {
     }
 
     public Carriage(){
-        mHatchPusher = new ChoosableSolenoid(1, 2);
-        mHatchGrabber = new ChoosableSolenoid(1, 3);
+        mHatchPusher = new ChoosableSolenoid(Constants.kCarriageModule, Constants.kHatchPusher);
+        mHatchGrabber = new ChoosableSolenoid(Constants.kCarriageModule, Constants.kHatchGrabber);
 
         setGrabberState(SolenoidState.FORCED_REVERSE);
         setPusherState(SolenoidState.FORCED_REVERSE);

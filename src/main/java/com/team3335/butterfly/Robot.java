@@ -2,7 +2,6 @@ package com.team3335.butterfly;
 
 import java.util.Arrays;
 
-import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
@@ -13,9 +12,7 @@ import com.team3335.butterfly.states.DrivetrainState.DrivetrainWheelState;
 import com.team3335.butterfly.subsystems.*;
 import com.team3335.butterfly.subsystems.Limelight.Target;
 import com.team3335.lib.driveassist.*;
-import com.team3335.lib.util.ChoosableSolenoid;
 import com.team3335.lib.util.LatchedBoolean;
-import com.team3335.lib.util.ChoosableSolenoid.SolenoidState;
 import com.team3335.butterfly.subsystems.Elevator.ElevatorControlState;
 
 public class Robot extends TimedRobot {
@@ -24,7 +21,6 @@ public class Robot extends TimedRobot {
 
     private ButterflyDriveHelper mButterflyDriveHelper = new ButterflyDriveHelper();
     private VisionTargetDriver mVisionTargetDriver = new VisionTargetDriver();
-    //private DriveAssistant mDriveAssistant = new DriveAssistant();
     private IControlBoard mControlBoard = ControlBoard.getInstance();
     
     private final SubsystemManager mSubsystemManager = new SubsystemManager(

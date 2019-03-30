@@ -3,8 +3,6 @@ package com.team3335.butterfly.controlboard;
 import com.team3335.butterfly.Constants;
 import com.team3335.butterfly.ControlBoard.GamepadControlBoardType;
 
-import java.util.HashMap;
-
 import edu.wpi.first.wpilibj.Joystick;
 
 
