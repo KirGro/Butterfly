@@ -95,11 +95,6 @@ public class ControlBoard implements IControlBoard{
 	}
 
 	@Override
-	public boolean getHabPickup() {
-		return mDriveControlBoard.getHabPickup();
-	}
-
-	@Override
 	public boolean getToggleDriveType() {
 		return mDriveControlBoard.getToggleDriveType();
 	}
@@ -140,11 +135,6 @@ public class ControlBoard implements IControlBoard{
 	}
 
 	@Override
-	public boolean getHabPickupHeight() {
-		return mDriveControlBoard.getHabPickupHeight();
-	}
-
-	@Override
 	public boolean getHatchLowHeight() {
 		return mDriveControlBoard.getHatchLowHeight();
 	}
@@ -155,8 +145,8 @@ public class ControlBoard implements IControlBoard{
 	}
 
 	@Override
-	public boolean getSwitchElevatorMode() {
-		return mDriveControlBoard.getSwitchElevatorMode();
+	public boolean getHatchHighHeight() {
+		return mDriveControlBoard.getHatchHighHeight();
 	}
 
 	@Override

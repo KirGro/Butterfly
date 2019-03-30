@@ -5,6 +5,8 @@ import com.team3335.butterfly.loops.Loop;
 import com.team3335.lib.util.ChoosableSolenoid;
 import com.team3335.lib.util.ChoosableSolenoid.SolenoidState;
 
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+
 public class Carriage extends Subsystem {
     private static Carriage mInstance;
     
@@ -49,11 +51,11 @@ public class Carriage extends Subsystem {
     }
 
     public void togglePusherState() {
-        mPeriodicIO.hatchPusherState.toggle();
+        mPeriodicIO.hatchPusherState = mPeriodicIO.hatchPusherState.toggle();
     }
 
     public void toggleGrabberState() {
-        mPeriodicIO.hatchGrabberState.toggle();
+        mPeriodicIO.hatchGrabberState = mPeriodicIO.hatchGrabberState.toggle();
     }
 
     public void setGrabberState(SolenoidState state) {
@@ -66,7 +68,8 @@ public class Carriage extends Subsystem {
 
     @Override
     public void outputTelemetry() {
-        
+        SmartDashboard.putString("Hatch Pusher", mPeriodicIO.hatchPusherState.toString());
+        SmartDashboard.putString("Hatch Grabber", mPeriodicIO.hatchGrabberState.toString());
     }
 
     @Override

@@ -16,6 +16,7 @@ import com.team3335.lib.driveassist.*;
 import com.team3335.lib.util.ChoosableSolenoid;
 import com.team3335.lib.util.LatchedBoolean;
 import com.team3335.lib.util.ChoosableSolenoid.SolenoidState;
+import com.team3335.butterfly.subsystems.Elevator.ElevatorControlState;
 
 public class Robot extends TimedRobot {
     private Looper mEnabledLooper = new Looper();
@@ -33,7 +34,8 @@ public class Robot extends TimedRobot {
                     NavX.getInstance(),
                     Carriage.getInstance(),
                     Limelight.getInstance(),
-                    Elevator.getInstance()
+                    Elevator.getInstance(),
+                    USBCamera.getInstance()
             )
     );
 
@@ -42,20 +44,20 @@ public class Robot extends TimedRobot {
     private Carriage mCarriage = Carriage.getInstance();
     private Limelight mLimelight = Limelight.getInstance();
     private Elevator mElevator = Elevator.getInstance();
+    private USBCamera mUsbCamera = USBCamera.getInstance();
     
     //Buttons
     private LatchedBoolean mToggleDriveType = new LatchedBoolean();
     private LatchedBoolean mDriveButton1 = new LatchedBoolean();
     private LatchedBoolean mDriveButton2 = new LatchedBoolean();
-    private LatchedBoolean mToggleTargeting = new LatchedBoolean();
-    private LatchedBoolean mStartAction = new LatchedBoolean();
-    private LatchedBoolean mTogglePlacing = new LatchedBoolean();
-    LatchedBoolean pusherToggle = new LatchedBoolean();
-    LatchedBoolean hatchGrabberToggle = new LatchedBoolean();
-
-    //Practicing
-    private LatchedBoolean mPlaceHatchLow = new LatchedBoolean();
-    private LatchedBoolean mPickupHatch = new LatchedBoolean();
+    private LatchedBoolean pusherToggle = new LatchedBoolean();
+    private LatchedBoolean hatchGrabberToggle = new LatchedBoolean();
+    private LatchedBoolean elevatorStateToggle = new LatchedBoolean();
+    private LatchedBoolean elevatorLowPositionToggle = new LatchedBoolean();
+    private LatchedBoolean elevatorMidPositionToggle = new LatchedBoolean();
+    private LatchedBoolean elevatorHighPositionToggle = new LatchedBoolean();
+    
+    
     
     /* STORAGE */
 
@@ -80,6 +82,10 @@ public class Robot extends TimedRobot {
     
     //DUNCAN
     private DrivetrainWheelState duncanState = Preferences.pDefaultDrivetrainWheelState;
+
+    //Elevator
+    private ElevatorControlState elevatorState = ElevatorControlState.MOTION_MAGIC;
+    private double distanceOffGround = 19;
     
     public Robot() {
     	
@@ -102,13 +108,18 @@ public class Robot extends TimedRobot {
     
     @Override
     public void autonomousInit() {
-    	SmartDashboard.putString("Match Cycle", "AUTONOMOUS");
+        SmartDashboard.putString("Match Cycle", "AUTONOMOUS");
+        mDrivetrain.zeroSensors();
+        mDisabledLooper.stop();
+        mEnabledLooper.start();
+        if(!mElevator.hasBeenZeroed()) {
+            mElevator.zeroSensors();
+        }
     }
     
     @Override
     public void teleopInit() {
         SmartDashboard.putString("Match Cycle", "TELEOP");
-        mDrivetrain.zeroSensors();
         mDisabledLooper.stop();
         mEnabledLooper.start();
         if(!mElevator.hasBeenZeroed()) {
@@ -121,6 +132,7 @@ public class Robot extends TimedRobot {
         SmartDashboard.putString("Match Cycle", "TEST");
         mDisabledLooper.stop();
         mEnabledLooper.stop();
+        mElevator.zeroSensors();
     }
 
     @Override
@@ -131,6 +143,7 @@ public class Robot extends TimedRobot {
     @Override
     public void autonomousPeriodic() {
         SmartDashboard.putString("Match Cycle", "AUTONOMOUS");
+        teleopPeriodic();
     }
 
     @Override
@@ -174,8 +187,8 @@ public class Robot extends TimedRobot {
                 }
                 break;
             case AUTO_SWITCHING:
-                if(db1) asTarget.prev();
-                if(db2) asTarget.next();
+                if(db1) asTarget = asTarget.prev();
+                if(db2) asTarget = asTarget.next();
                 mLimelight.setPipeline(Target.HATCH_TARGET);
                 if(mLimelight.hasTarget() && mLimelight.getDistance()<24) asModeState = DriveModeState.MECANUM_ROBOT_RELATIVE;
                 else asModeState = DriveModeState.MECANUM_FIELD_RELATIVE;
@@ -186,18 +199,22 @@ public class Robot extends TimedRobot {
                 }
                 break;
             case FULL_VISION:
-                if(db1) asTarget.prev();
-                if(db2) asTarget.next();
+                if(db1) asTarget = asTarget.prev();
+                if(db2) asTarget = asTarget.next();
                 break;
             case DUNCAN:
-                if(db2) duncanState.next();
+                if(db2) duncanState = duncanState.next();
                 break;
 
         }
 
         //Send stuff to specific drivetrain helpers to run calculations and then those to drivetrain
         DriveModeState usingMode = (wheelState==DrivetrainWheelState.SKID_STEER ? skidModeState : mecanumModeState);
-        mDrivetrain.setWheelState(wheelState);
+        if(type != DriveType.DUNCAN) {
+            mDrivetrain.setWheelState(wheelState);
+        } else {
+            mDrivetrain.setWheelState(duncanState);
+        }
         switch(type) {
             case CUSTOM:
                 switch(usingMode) {
@@ -231,6 +248,7 @@ public class Robot extends TimedRobot {
             case DUNCAN:
                 switch(duncanState) {
                     case SKID_STEER:
+
                         mDrivetrain.setOpenLoop(mButterflyDriveHelper.butterflyDrive(f1, s, r, 0, DriveModeState.ARCADE, DrivetrainWheelState.SKID_STEER, true));
                         break;
                     case MECANUM:
@@ -240,7 +258,6 @@ public class Robot extends TimedRobot {
                 }
                 break;
         }
-
         //Carriage stuff
         if(pusherToggle.update(mControlBoard.getHatchPusher())) {
             mCarriage.togglePusherState();
@@ -249,11 +266,31 @@ public class Robot extends TimedRobot {
             mCarriage.toggleGrabberState();
         }
 
-
         //Elevator stuff
-        
+        if(elevatorStateToggle.update(mControlBoard.getElevatorStateToggle())) {
+            elevatorState = elevatorState.next();
+        }
 
-        mElevator.setOpenLoop(mControlBoard.getElevator());
+        if(elevatorLowPositionToggle.update(mControlBoard.getHatchLowHeight())) {
+            distanceOffGround = Constants.kFloorToLowHatchCenter-1;
+        } else if(elevatorMidPositionToggle.update(mControlBoard.getHatchMiddleHeight())) {
+            distanceOffGround = Constants.kFloorToMiddleHatchCenter;
+        } else if(elevatorHighPositionToggle.update(mControlBoard.getHatchHighHeight())) {
+            distanceOffGround = Constants.kFloorToHighHatchCenter+2;
+        }
+
+        switch(elevatorState) {
+            case OPEN_LOOP:
+                mElevator.setOpenLoop(mControlBoard.getElevator());
+                break;
+            case MOTION_MAGIC:
+                mElevator.setMotionMagicPosition(distanceOffGround);
+                break;
+            case POSITION_PID:
+                mElevator.setPositionPID(distanceOffGround);
+                break;
+        }
+
     }
     
 }

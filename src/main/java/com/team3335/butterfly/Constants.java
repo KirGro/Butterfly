@@ -82,7 +82,7 @@ public class Constants {
 	public static final double kElevatorReachOffset = 1.5;
 	public static final double kElevatorCargoPassHeight = 1;
 
-	public static final int kElevatorTicksPerInch = (int) Math.round(Constants.kSRXEncoderCPR / (Constants.kElevatorScalarFactor * Constants.kElevatorDrumDiameter * Math.PI * Constants.kEGearRatio2 * Constants.kEGearRatio2));
+	public static final int kElevatorTicksPerInch = (int) Math.round(Constants.kSRXEncoderCPR / (2 * Constants.kElevatorScalarFactor * Constants.kElevatorDrumDiameter * Math.PI * Constants.kEGearRatio2 * Constants.kEGearRatio2));
 
 	//RearIntake
 

@@ -2,13 +2,11 @@ package com.team3335.butterfly.subsystems;
 
 import com.ctre.phoenix.motorcontrol.ControlMode;
 import com.ctre.phoenix.motorcontrol.FeedbackDevice;
-import com.ctre.phoenix.motorcontrol.FollowerType;
 import com.ctre.phoenix.motorcontrol.NeutralMode;
 import com.ctre.phoenix.motorcontrol.SensorCollection;
 import com.ctre.phoenix.motorcontrol.can.TalonSRX;
 import com.ctre.phoenix.motorcontrol.can.VictorSPX;
 import com.team3335.butterfly.Constants;
-import com.team3335.butterfly.Preferences;
 import com.team3335.butterfly.loops.ILooper;
 import com.team3335.butterfly.loops.Loop;
 import com.team3335.butterfly.subsystems.Subsystem;
@@ -16,11 +14,10 @@ import com.team3335.lib.util.LatchedBoolean;
 import com.team3335.lib.util.Util;
 
 import edu.wpi.first.wpilibj.Timer;
-import edu.wpi.first.wpilibj.drive.RobotDriveBase.MotorType;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
 public class Elevator extends Subsystem {
-	private static Elevator mInstance = new Elevator();
+	private static Elevator mInstance;
 
 	private TalonSRX mWinchMaster;
 	private VictorSPX mWinchSlave1;
@@ -90,11 +87,11 @@ public class Elevator extends Subsystem {
 		mWinchMaster.config_IntegralZone(0, 0, Constants.kLongCANTimeoutMs);
 		mWinchMaster.configSelectedFeedbackSensor(FeedbackDevice.CTRE_MagEncoder_Relative, 0, 100);
 
-		mWinchMaster.configForwardSoftLimitEnable(true);
 		mWinchMaster.configForwardSoftLimitThreshold(convertHeightToEncoderTarget(Constants.kElevatorRelativeMaxHeight));
-		mWinchMaster.configReverseSoftLimitEnable(true);
+		mWinchMaster.configForwardSoftLimitEnable(false);
 		mWinchMaster.configReverseSoftLimitThreshold(convertHeightToEncoderTarget(Constants.kElevatorRelativeMinHeight));
-		mWinchMaster.overrideSoftLimitsEnable(false);
+		mWinchMaster.configReverseSoftLimitEnable(false);
+		//mWinchMaster.overrideSoftLimitsEnable(false);
 
 		//MotionMagic junk
 		mWinchMaster.configMaxIntegralAccumulator(0, 100000, Constants.kLongCANTimeoutMs);
@@ -107,8 +104,9 @@ public class Elevator extends Subsystem {
 		mWinchMaster.configPeakCurrentLimit(35, Constants.kLongCANTimeoutMs); //254 had 35
 		mWinchMaster.configPeakCurrentDuration(200, Constants.kLongCANTimeoutMs); //254 had 200
 		mWinchMaster.enableCurrentLimit(true);
+		mWinchMaster.configClosedLoopPeakOutput(0, .4, 100);
 
-		mElevatorControlState = ElevatorControlState.OPEN_LOOP;
+		mElevatorControlState = ElevatorControlState.MOTION_MAGIC;
 		
 	}
 
@@ -118,7 +116,7 @@ public class Elevator extends Subsystem {
         if(mElevatorControlState != ElevatorControlState.OPEN_LOOP) {
 			mElevatorControlState = ElevatorControlState.OPEN_LOOP;
 		}
-        mPeriodicIO.percentOutput = percentage>.04 ? percentage : 0;
+        mPeriodicIO.percentOutput = Math.abs(percentage) > .04 ? percentage : 0;
     }
 
     public synchronized void setMotionMagicPosition(double positionInchesOffGround) {
@@ -204,15 +202,16 @@ public class Elevator extends Subsystem {
 				mWinchMaster.set(ControlMode.PercentOutput, 0);
 				mZeroingSensors = false;
 				hasBeenZeroed = true;
-				mWinchMaster.configForwardSoftLimitEnable(true);
-				mWinchMaster.configReverseSoftLimitEnable(true);
+				mWinchMaster.configForwardSoftLimitThreshold(315000, 100);
+				mWinchMaster.configForwardSoftLimitEnable(true, 100);
+				mWinchMaster.configReverseSoftLimitThreshold(-5000, 100);
+				mWinchMaster.configReverseSoftLimitEnable(true, 100);
 			} else if(Math.abs(Timer.getFPGATimestamp()-mPeriodicIO.lastSeenCarriage)<=.24) {
-				mWinchMaster.set(ControlMode.PercentOutput, .1);
+				mWinchMaster.set(ControlMode.PercentOutput, .2);
 			} else {
-				mWinchMaster.set(ControlMode.PercentOutput, -.05);
+				mWinchMaster.set(ControlMode.PercentOutput, -.1);
 			} 
 			lostCarriageBefore = mJustLostCarriage.update(!mPeriodicIO.forwardLimitClosed) ? true : lostCarriageBefore;
-			//seenCarriageBefore = mPeriodicIO.forwardLimitClosed ? true : seenCarriageBefore;
 		}else if(hasBeenZeroed){
 			switch (mElevatorControlState) {
 				case MOTION_MAGIC:
@@ -243,7 +242,7 @@ public class Elevator extends Subsystem {
 	}
 
 
-    private enum ElevatorControlState {
+    public enum ElevatorControlState {
         OPEN_LOOP,
         MOTION_MAGIC,
 		POSITION_PID;
