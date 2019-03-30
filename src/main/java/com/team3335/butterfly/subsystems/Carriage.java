@@ -43,7 +43,7 @@ public class Carriage extends Subsystem {
         return mInstance;
     }
 
-    public Carriage(){
+    private Carriage(){
         mHatchPusher = new ChoosableSolenoid(Constants.kCarriageModule, Constants.kHatchPusher);
         mHatchGrabber = new ChoosableSolenoid(Constants.kCarriageModule, Constants.kHatchGrabber);
 
