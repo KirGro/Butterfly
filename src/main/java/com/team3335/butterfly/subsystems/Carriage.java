@@ -40,6 +40,14 @@ public class Carriage extends Subsystem {
         return mInstance;
     }
 
+    public Carriage(){
+        mHatchPusher = new ChoosableSolenoid(1, 2);
+        mHatchGrabber = new ChoosableSolenoid(1, 3);
+
+        setGrabberState(SolenoidState.FORCED_REVERSE);
+        setPusherState(SolenoidState.FORCED_REVERSE);
+    }
+
     public void togglePusherState() {
         mPeriodicIO.hatchPusherState.toggle();
     }

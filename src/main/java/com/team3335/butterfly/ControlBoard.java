@@ -158,4 +158,9 @@ public class ControlBoard implements IControlBoard{
 	public boolean getSwitchElevatorMode() {
 		return mDriveControlBoard.getSwitchElevatorMode();
 	}
+
+	@Override
+	public boolean getElevatorStateToggle() {
+		return mDriveControlBoard.getElevatorStateToggle();
+	}
 }

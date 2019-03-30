@@ -50,6 +50,8 @@ public class Robot extends TimedRobot {
     private LatchedBoolean mToggleTargeting = new LatchedBoolean();
     private LatchedBoolean mStartAction = new LatchedBoolean();
     private LatchedBoolean mTogglePlacing = new LatchedBoolean();
+    LatchedBoolean pusherToggle = new LatchedBoolean();
+    LatchedBoolean hatchGrabberToggle = new LatchedBoolean();
 
     //Practicing
     private LatchedBoolean mPlaceHatchLow = new LatchedBoolean();
@@ -107,10 +109,11 @@ public class Robot extends TimedRobot {
     public void teleopInit() {
         SmartDashboard.putString("Match Cycle", "TELEOP");
         mDrivetrain.zeroSensors();
-        mElevator.zeroSensors();
         mDisabledLooper.stop();
         mEnabledLooper.start();
-        //mElevator.setEncoderTargetHeight(0);
+        if(!mElevator.hasBeenZeroed()) {
+            mElevator.zeroSensors();
+        }
     }
 
     @Override
@@ -129,12 +132,6 @@ public class Robot extends TimedRobot {
     public void autonomousPeriodic() {
         SmartDashboard.putString("Match Cycle", "AUTONOMOUS");
     }
-    
-    //TODO REMOVE TEMPORARY CRAP
-    ChoosableSolenoid pusher = new ChoosableSolenoid(1, 2);
-    ChoosableSolenoid hatchGrabber = new ChoosableSolenoid(1, 3);
-    LatchedBoolean pusherToggle = new LatchedBoolean();
-    LatchedBoolean hatchGrabberToggle = new LatchedBoolean();
 
     @Override
     public void teleopPeriodic() {
@@ -197,7 +194,7 @@ public class Robot extends TimedRobot {
                 break;
 
         }
-        
+
         //Send stuff to specific drivetrain helpers to run calculations and then those to drivetrain
         DriveModeState usingMode = (wheelState==DrivetrainWheelState.SKID_STEER ? skidModeState : mecanumModeState);
         mDrivetrain.setWheelState(wheelState);
@@ -244,12 +241,17 @@ public class Robot extends TimedRobot {
                 break;
         }
 
+        //Carriage stuff
         if(pusherToggle.update(mControlBoard.getHatchPusher())) {
-            pusher.setState(pusher.getRequestedState()==SolenoidState.FORCED_FORWARD ? SolenoidState.FORCED_REVERSE : SolenoidState.FORCED_FORWARD);
+            mCarriage.togglePusherState();
         }
         if(hatchGrabberToggle.update(mControlBoard.getHatchGrabber())) {
-            hatchGrabber.setState(hatchGrabber.getRequestedState()==SolenoidState.FORCED_FORWARD ? SolenoidState.FORCED_REVERSE : SolenoidState.FORCED_FORWARD);
+            mCarriage.toggleGrabberState();
         }
+
+
+        //Elevator stuff
+        
 
         mElevator.setOpenLoop(mControlBoard.getElevator());
     }

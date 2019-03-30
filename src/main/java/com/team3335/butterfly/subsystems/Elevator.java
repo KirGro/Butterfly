@@ -29,7 +29,8 @@ public class Elevator extends Subsystem {
 
 	private boolean mZeroingSensors = false, mSeenAtZeroingStart = false;
 	private LatchedBoolean mJustCaughtCarriage = new LatchedBoolean();
-	private boolean hasBeenZeroed = false;
+	private boolean hasBeenZeroed = false, lostCarriageBefore = false;
+	private LatchedBoolean mJustLostCarriage = new LatchedBoolean();
 
 	private PeriodicIO mPeriodicIO = new PeriodicIO();
 
@@ -73,8 +74,8 @@ public class Elevator extends Subsystem {
 
 		//Set robot intial settings
 		mWinchSlave1.follow(mWinchMaster);
-		mWinchMaster.setInverted(false);
-		mWinchSlave1.setInverted(false);
+		mWinchMaster.setInverted(true);
+		mWinchSlave1.setInverted(true);
 
 		mWinchMaster.setNeutralMode(NeutralMode.Brake);
 		mWinchSlave1.setNeutralMode(NeutralMode.Brake);
@@ -155,7 +156,11 @@ public class Elevator extends Subsystem {
     public synchronized boolean hasFinishedTrajectory() {
         return mElevatorControlState == ElevatorControlState.MOTION_MAGIC &&
                 Util.epsilonEquals(mPeriodicIO.activeTrajectoryPosition, mPeriodicIO.encoderTarget, 5);
-    }
+	}
+	
+	public boolean hasBeenZeroed() {
+		return hasBeenZeroed;
+	}
 
 	@Override
 	public void zeroSensors() {
@@ -173,6 +178,7 @@ public class Elevator extends Subsystem {
 		SmartDashboard.putNumber("Elevator Target", mPeriodicIO.encoderTarget);
 		SmartDashboard.putBoolean("Carriage Seen", mPeriodicIO.forwardLimitClosed);
 		SmartDashboard.putNumber("Elevator Percent Output", mPeriodicIO.percentOutput);
+		SmartDashboard.putBoolean("Elevator Zeroed", hasBeenZeroed);
 	}
 
 	@Override
@@ -193,18 +199,20 @@ public class Elevator extends Subsystem {
 	@Override
 	public void writePeriodicOutputs() {
 		if(mZeroingSensors) {
-			if(mSeenAtZeroingStart && Math.abs(Timer.getFPGATimestamp()-mPeriodicIO.lastSeenCarriage)<=.24) {
-				mWinchMaster.set(ControlMode.PercentOutput, .1);
-			} else if(mJustCaughtCarriage.update(mPeriodicIO.forwardLimitClosed)) {
+			if((!mSeenAtZeroingStart || lostCarriageBefore) && mJustCaughtCarriage.update(mPeriodicIO.forwardLimitClosed)) {
 				mWinchMaster.setSelectedSensorPosition(0, 0, 0);
 				mWinchMaster.set(ControlMode.PercentOutput, 0);
 				mZeroingSensors = false;
 				hasBeenZeroed = true;
 				mWinchMaster.configForwardSoftLimitEnable(true);
 				mWinchMaster.configReverseSoftLimitEnable(true);
+			} else if(Math.abs(Timer.getFPGATimestamp()-mPeriodicIO.lastSeenCarriage)<=.24) {
+				mWinchMaster.set(ControlMode.PercentOutput, .1);
 			} else {
 				mWinchMaster.set(ControlMode.PercentOutput, -.05);
 			} 
+			lostCarriageBefore = mJustLostCarriage.update(!mPeriodicIO.forwardLimitClosed) ? true : lostCarriageBefore;
+			//seenCarriageBefore = mPeriodicIO.forwardLimitClosed ? true : seenCarriageBefore;
 		}else if(hasBeenZeroed){
 			switch (mElevatorControlState) {
 				case MOTION_MAGIC:
@@ -230,7 +238,7 @@ public class Elevator extends Subsystem {
 			mPeriodicIO.activeTrajectoryPosition = mWinchMaster.getActiveTrajectoryPosition();
 			mPeriodicIO.activeTrajectoryVelocity = mWinchMaster.getActiveTrajectoryVelocity();
 		}
-		mPeriodicIO.forwardLimitClosed = mTalonSensors.isFwdLimitSwitchClosed();
+		mPeriodicIO.forwardLimitClosed = !mTalonSensors.isFwdLimitSwitchClosed();
 		mPeriodicIO.lastSeenCarriage = mPeriodicIO.forwardLimitClosed ? Timer.getFPGATimestamp() : mPeriodicIO.lastSeenCarriage;
 	}
 

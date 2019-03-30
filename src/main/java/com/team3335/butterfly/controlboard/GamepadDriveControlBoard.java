@@ -61,6 +61,11 @@ public class GamepadDriveControlBoard implements IDriveControlBoard{
 	}
 
 	@Override
+	public boolean getElevatorStateToggle() {
+		return mJoystick.getRawButton(Constants.buttonNameToId.get("X"));
+	}
+
+	@Override
 	public boolean getToggleDriveType() {
 		return mJoystick.getRawButton(Constants.buttonNameToId.get("Back"));
 	}

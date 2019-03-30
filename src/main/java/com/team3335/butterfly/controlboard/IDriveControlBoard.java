@@ -19,6 +19,7 @@ public interface IDriveControlBoard {
 	public boolean getHatchGrabber();
 	public boolean getHabPickup();
 
+	public boolean getElevatorStateToggle();
 	public double getElevator();
 	public boolean getHabPickupHeight();
 	public boolean getHatchLowHeight();
