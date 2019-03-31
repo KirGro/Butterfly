@@ -10,6 +10,8 @@ import com.team3335.butterfly.states.DrivetrainState.DriveModeState;
 import com.team3335.butterfly.states.DrivetrainState.DriveType;
 import com.team3335.butterfly.states.DrivetrainState.DrivetrainWheelState;
 import com.team3335.butterfly.subsystems.*;
+import com.team3335.butterfly.subsystems.Limelight.CameraMode;
+import com.team3335.butterfly.subsystems.Limelight.LightMode;
 import com.team3335.butterfly.subsystems.Limelight.Target;
 import com.team3335.lib.driveassist.*;
 import com.team3335.lib.util.LatchedBoolean;
@@ -31,7 +33,8 @@ public class Robot extends TimedRobot {
                     Carriage.getInstance(),
                     Limelight.getInstance(),
                     Elevator.getInstance(),
-                    USBCamera.getInstance()
+                    USBCamera.getInstance(),
+                    PDP.getInstance()
             )
     );
 
@@ -41,6 +44,7 @@ public class Robot extends TimedRobot {
     private Limelight mLimelight = Limelight.getInstance();
     private Elevator mElevator = Elevator.getInstance();
     private USBCamera mUsbCamera = USBCamera.getInstance();
+    private PDP mPDP = PDP.getInstance();
     
     //Buttons
     private LatchedBoolean mToggleDriveType = new LatchedBoolean();
@@ -111,6 +115,8 @@ public class Robot extends TimedRobot {
         if(!mElevator.hasBeenZeroed()) {
             mElevator.zeroSensors();
         }
+        mLimelight.setCameraMode(CameraMode.DRIVER);
+        mLimelight.setLedMode(LightMode.OFF);
     }
     
     @Override
@@ -121,6 +127,8 @@ public class Robot extends TimedRobot {
         if(!mElevator.hasBeenZeroed()) {
             mElevator.zeroSensors();
         }
+        mLimelight.setCameraMode(CameraMode.DRIVER);
+        mLimelight.setLedMode(LightMode.OFF);
     }
 
     @Override
@@ -270,7 +278,7 @@ public class Robot extends TimedRobot {
         if(elevatorLowPositionToggle.update(mControlBoard.getHatchLowHeight())) {
             distanceOffGround = Constants.kFloorToLowHatchCenter-1;
         } else if(elevatorMidPositionToggle.update(mControlBoard.getHatchMiddleHeight())) {
-            distanceOffGround = Constants.kFloorToMiddleHatchCenter;
+            distanceOffGround = Constants.kFloorToMiddleHatchCenter+2;
         } else if(elevatorHighPositionToggle.update(mControlBoard.getHatchHighHeight())) {
             distanceOffGround = Constants.kFloorToHighHatchCenter+2;
         }

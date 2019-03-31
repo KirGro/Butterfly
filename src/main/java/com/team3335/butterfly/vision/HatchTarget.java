@@ -29,6 +29,7 @@ public class HatchTarget implements IVisionTarget{
 
 	@Override
 	public double getSidewaysAngle() {
+		//OLD HATCH return Limelight.getInstance().getTx();
 		return Limelight.getInstance().getTx();
 	}
 

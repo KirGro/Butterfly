@@ -104,7 +104,9 @@ public class Elevator extends Subsystem {
 		mWinchMaster.configPeakCurrentLimit(35, Constants.kLongCANTimeoutMs); //254 had 35
 		mWinchMaster.configPeakCurrentDuration(200, Constants.kLongCANTimeoutMs); //254 had 200
 		mWinchMaster.enableCurrentLimit(true);
-		mWinchMaster.configClosedLoopPeakOutput(0, .4, 100);
+		mWinchMaster.configClosedLoopPeakOutput(0, 1, 100);
+		mWinchMaster.configMotionAcceleration(250000, 100);
+		mWinchMaster.configMotionCruiseVelocity(175000, 100);
 
 		mElevatorControlState = ElevatorControlState.MOTION_MAGIC;
 		
@@ -116,7 +118,7 @@ public class Elevator extends Subsystem {
         if(mElevatorControlState != ElevatorControlState.OPEN_LOOP) {
 			mElevatorControlState = ElevatorControlState.OPEN_LOOP;
 		}
-        mPeriodicIO.percentOutput = Math.abs(percentage) > .04 ? percentage : 0;
+        mPeriodicIO.percentOutput = Math.abs(percentage) > .04 ? percentage : 0.086;
     }
 
     public synchronized void setMotionMagicPosition(double positionInchesOffGround) {
@@ -171,12 +173,15 @@ public class Elevator extends Subsystem {
 
 	@Override
 	public void outputTelemetry() {
-		SmartDashboard.putNumber("Elevator Encoder", mPeriodicIO.encoderPosition);
+		SmartDashboard.putNumber("Elevator Encoder Position", mPeriodicIO.encoderPosition);
+		SmartDashboard.putNumber("Elevator Encoder Velocity", mPeriodicIO.encoderVelocity);
 		SmartDashboard.putString("Elevator Control State", mElevatorControlState.toString());
 		SmartDashboard.putNumber("Elevator Target", mPeriodicIO.encoderTarget);
 		SmartDashboard.putBoolean("Carriage Seen", mPeriodicIO.forwardLimitClosed);
 		SmartDashboard.putNumber("Elevator Percent Output", mPeriodicIO.percentOutput);
 		SmartDashboard.putBoolean("Elevator Zeroed", hasBeenZeroed);
+		SmartDashboard.putNumber("Elevator Master Output", mPeriodicIO.masterPercentOutput);
+		SmartDashboard.putNumber("Elevator Slave 1 Output", mPeriodicIO.slave1PercentOutput);
 	}
 
 	@Override
@@ -233,6 +238,8 @@ public class Elevator extends Subsystem {
 	public void readPeriodicInputs() {
 		mPeriodicIO.encoderPosition = mWinchMaster.getSelectedSensorPosition();
 		mPeriodicIO.encoderVelocity = mWinchMaster.getSelectedSensorVelocity();
+		mPeriodicIO.masterPercentOutput = mWinchMaster.getMotorOutputPercent();
+		mPeriodicIO.slave1PercentOutput = mWinchSlave1.getMotorOutputPercent();
 		if(mElevatorControlState == ElevatorControlState.MOTION_MAGIC) {
 			mPeriodicIO.activeTrajectoryPosition = mWinchMaster.getActiveTrajectoryPosition();
 			mPeriodicIO.activeTrajectoryVelocity = mWinchMaster.getActiveTrajectoryVelocity();
@@ -264,6 +271,8 @@ public class Elevator extends Subsystem {
 		//Inputs
 		public int encoderPosition;
 		public int encoderVelocity;
+		public double masterPercentOutput;
+		public double slave1PercentOutput;
 		public int activeTrajectoryVelocity;
 		public int activeTrajectoryPosition;
 		public boolean forwardLimitClosed;

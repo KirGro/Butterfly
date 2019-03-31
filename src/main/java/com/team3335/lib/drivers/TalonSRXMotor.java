@@ -236,7 +236,7 @@ public class TalonSRXMotor extends Motor implements IAdvancedMotor{
         public void setControlPointFromCurrent(double rotations) {
                 int pos = ((int) Math.round(rotations/encoderToOutputRatio)) * Constants.kSRXEncoderCPR;
                 int target = pos+getEncoderPosition();
-                talonMotor.set(ControlMode.Position,target);
+                talonMotor.set(ControlMode.MotionMagic,target);
                 SmartDashboard.putNumber("CanID: "+mCANId+", Target: ", target);
         }
 
